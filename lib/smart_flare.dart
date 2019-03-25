@@ -46,17 +46,18 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
     }
 
     // if (interactableWidgets == null) {
-      interactableWidgets = List<Widget>();
-      interactableWidgets.add(Container(
-        width: widget.width,
-        height: widget.height,
-        child: FlareActor(
-          widget.filename,
-          controller: _animationControls,
-          animation: widget.startingAnimation,
-        ),
-      ));
+    interactableWidgets = List<Widget>();
+    interactableWidgets.add(Container(
+      width: widget.width,
+      height: widget.height,
+      child: FlareActor(
+        widget.filename,
+        controller: _animationControls,
+        animation: widget.startingAnimation,
+      ),
+    ));
 
+    if (widget.activeAreas != null) {
       var interactiveAreas = widget.activeAreas.map((activeArea) {
         return Positioned(
             top: activeArea.area.top,
@@ -85,6 +86,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
       });
 
       interactableWidgets.addAll(interactiveAreas);
+    }
     // }
 
     return Stack(children: interactableWidgets);
@@ -136,6 +138,7 @@ class ActiveArea {
   /// ()A list of values for the active area to guard against, going to certain animations.
   // final List<String> guardGoingTo;
 
+  /// Draws debug data over the animation to indicate the active area
   final bool debugArea;
 
   int _nextAnimationIndex = 0;
