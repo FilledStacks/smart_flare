@@ -18,7 +18,7 @@ If you want to just play a normal animation I would recommend using [Flare's Flu
 
 This is used the same as a Flare Actor is used with some additional properties. To use this actor at a minimum level you have to supply width, heigh and the filename to the animation. This will draw the animation on screen without playing anything.
 
-```
+```dart
 import 'package:flutter/material.dart';
 import 'package:smart_flare/smart_flare.dart';
 
@@ -42,7 +42,7 @@ class _FlareDemoState extends State<FlareDemo> {
 
 Additionally you can then give it a starting animation for it to play something.
 
-```
+```dart
 SmartFlareActor(
     width: 295.0,
     height: 251.0,
@@ -54,7 +54,7 @@ SmartFlareActor(
 
 The main feature of this package is to provide it's interactive nature. You can supply the actor with ActiveArea's which looks as follows.
 
-```
+```dart
 class ActiveArea {
   final Rect area;
   final String animationName;
@@ -68,7 +68,7 @@ class ActiveArea {
 
 Each active area requires an area and either an animationName to play when tapped, or a list of animationsToCycle through when tapped. You can also set debugArea to true and the touch area will display over the animation so you can see if your calculations are correct.
 
-```
+```dart
 ActiveArea(
     debugArea: true,
     area: Rect.fromLTWH(thirdOfWidth*2, 0, thirdOfWidth, animationHeight / 2),
@@ -79,7 +79,7 @@ ActiveArea(
 #### Area Callbacks
 If you want to perform an action when something is tapped, which you probably do you can supply a function to onAreaTapped and run your code in there.
 
-```
+```dart
 ActiveArea(
     debugArea: true,
     area: Rect.fromLTWH(thirdOfWidth*2, 0, thirdOfWidth, animationHeight / 2),
@@ -95,7 +95,7 @@ ActiveArea(
 
 If you want to make sure that an animation does not play after another you can supply it with a list of animations to guard against. This means that, the area animation you want to play, WILL NOT PLAY of the **last played** animation is contained in the guardComingFrom list. _GuardGoingTo coming in next release._
 
-```
+```dart
 ActiveArea(
           debugArea: true,
           area: Rect.fromLTWH(thirdOfWidth*2, 0, thirdOfWidth, animationHeight / 2),
