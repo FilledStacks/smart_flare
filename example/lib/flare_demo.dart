@@ -16,6 +16,7 @@ class _FlareDemoState extends State<FlareDemo> {
     var activeAreas = [
       // Insert top-left
       ActiveArea(
+        debugArea: true,
           area: Rect.fromLTRB(0, 0, thirdOfWidth, animationHeight / 2),
           guardComingFrom: ['deactivate'],
           animationName: 'camera_tapped',
@@ -24,6 +25,7 @@ class _FlareDemoState extends State<FlareDemo> {
           }),
           // Insert middle
       ActiveArea(
+        debugArea: true,
           area: Rect.fromLTWH(thirdOfWidth, 0, thirdOfWidth, animationHeight / 2),
           guardComingFrom: ['deactivate'],
           animationName: 'pulse_tapped',
@@ -50,7 +52,7 @@ class _FlareDemoState extends State<FlareDemo> {
     ];
 
     return Scaffold(
-        backgroundColor: Colors.purple,
+        backgroundColor: Color.fromARGB(255, 102, 18, 222),
         body: Align(
             alignment: Alignment.bottomCenter,
             child: SmartFlareActor(

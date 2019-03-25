@@ -64,7 +64,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
             left: activeArea.area.left,
             child: GestureDetector(
               onTap: () {
-                print("SmartFlare:INFO - Animation tped");
+                // print("SmartFlare:INFO - Animation tped");
                 playAnimation(activeArea);
 
                 if (activeArea.onAreaTapped != null) {
