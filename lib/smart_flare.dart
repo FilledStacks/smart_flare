@@ -135,11 +135,12 @@ class ActiveArea {
   /// A list of values for the active area to guard against coming from certain animations.
   final List<String> guardComingFrom;
 
-  /// ()A list of values for the active area to guard against, going to certain animations.
-  // final List<String> guardGoingTo;
-
   /// Draws debug data over the animation to indicate the active area
   final bool debugArea;
+
+    /// ()A list of values for the active area to guard against, going to certain animations.
+  // final List<String> guardGoingTo;
+
 
   int _nextAnimationIndex = 0;
 

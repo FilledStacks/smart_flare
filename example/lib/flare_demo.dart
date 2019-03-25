@@ -6,15 +6,59 @@ class FlareDemo extends StatefulWidget {
   _FlareDemoState createState() => _FlareDemoState();
 }
 
+
 class _FlareDemoState extends State<FlareDemo> {
   @override
   Widget build(BuildContext context) {
+    var animationWidth = 295.0;
+    var animationHeight = 251.0;
+    var thirdOfWidth = animationWidth / 3;
+    var activeAreas = [
+      // Insert top-left
+      ActiveArea(
+          area: Rect.fromLTRB(0, 0, thirdOfWidth, animationHeight / 2),
+          guardComingFrom: ['deactivate'],
+          animationName: 'camera_tapped',
+          onAreaTapped: () {
+            print('Camera tapped!');
+          }),
+          // Insert middle
+      ActiveArea(
+          area: Rect.fromLTWH(thirdOfWidth, 0, thirdOfWidth, animationHeight / 2),
+          guardComingFrom: ['deactivate'],
+          animationName: 'pulse_tapped',
+          onAreaTapped: () {
+            print('Pulse tapped!');
+          }),
+        // Insert top-right
+      ActiveArea(
+          debugArea: true,
+          area: Rect.fromLTWH(thirdOfWidth*2, 0, thirdOfWidth, animationHeight / 2),
+          guardComingFrom: ['deactivate'],
+          animationName: 'image_tapped',
+          onAreaTapped: () {
+            print('Image tapped!');
+          }),
+          // Insert bottom half area
+      ActiveArea(
+          debugArea: true,
+          area: Rect.fromLTWH(0, animationHeight / 2, animationWidth, animationHeight / 2),
+          animationsToCycle: ['activate', 'deactivate'],
+          onAreaTapped: () {
+            print('Activate toggles!');
+          }),
+    ];
+
     return Scaffold(
-      backgroundColor: Colors.black,
-        body: SmartFlareActor(
-            width: 295.0,
-            height: 251.0,
-            filename: 'assets/button-animation.flr',
-            startingAnimation: 'deactivate',));
+        backgroundColor: Colors.purple,
+        body: Align(
+            alignment: Alignment.bottomCenter,
+            child: SmartFlareActor(
+              width: animationWidth,
+              height: animationHeight,
+              filename: 'assets/button-animation.flr',
+              startingAnimation: 'deactivate',
+              activeAreas: activeAreas,
+            )));
   }
 }
