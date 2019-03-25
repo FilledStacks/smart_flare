@@ -4,7 +4,6 @@
 library smart_flare;
 
 import 'package:flutter/material.dart';
-import 'package:flare_flutter/flare.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 
@@ -38,6 +37,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
   String _lastPlayedAnimation;
 
   final FlareControls _animationControls = FlareControls();
+  List<Widget> interactableWidgets;
 
   @override
   Widget build(BuildContext context) {
@@ -45,11 +45,9 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
       print('SmartFlare:Warning: - No starting animation supplied');
     }
 
-    // print('SmartFlare: ${_animationName ?? widget.startingAnimation}');
-
-    return GestureDetector(
-      onTapUp: _handleTapUp,
-      child: Container(
+    // if (interactableWidgets == null) {
+      interactableWidgets = List<Widget>();
+      interactableWidgets.add(Container(
         width: widget.width,
         height: widget.height,
         child: FlareActor(
@@ -57,44 +55,61 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
           controller: _animationControls,
           animation: widget.startingAnimation,
         ),
-      ),
-    );
-  }
+      ));
 
-  void _handleTapUp(TapUpDetails tapDetails) {
-    // Convert the global position to a local position within our widget
-    var localPosition = (context.findRenderObject() as RenderBox)
-        .globalToLocal(tapDetails.globalPosition);
+      var interactiveAreas = widget.activeAreas.map((activeArea) {
+        return Positioned(
+            top: activeArea.area.top,
+            left: activeArea.area.left,
+            child: GestureDetector(
+              onTap: () {
+                print("SmartFlare:INFO - Animation tped");
+                playAnimation(activeArea);
 
-    widget.activeAreas.forEach((activeArea) {
-      // Check if the current touch is in the local position
-      if (activeArea.area.contains(localPosition)) {
-        playAnimation(activeArea);
+                if (activeArea.onAreaTapped != null) {
+                  activeArea.onAreaTapped();
+                }
+              },
+              child: Container(
+                width: activeArea.area.width,
+                height: activeArea.area.height,
+                decoration: BoxDecoration(
+                    color: activeArea.debugArea
+                        ? Color.fromARGB(80, 256, 0, 0)
+                        : Colors.transparent,
+                    border: activeArea.debugArea
+                        ? Border.all(color: Colors.blue, width: 1.0)
+                        : null),
+              ),
+            ));
+      });
 
-        if (activeArea.onAreaTapped != null) {
-          activeArea.onAreaTapped();
-        }
-      }
-    });
+      interactableWidgets.addAll(interactiveAreas);
+    // }
+
+    return Stack(children: interactableWidgets);
   }
 
   void playAnimation(ActiveArea activeArea) {
     String animationToPlay;
 
     if (activeArea.animationName != null) {
-     animationToPlay = activeArea.animationName;
+      animationToPlay = activeArea.animationName;
     } else if (activeArea.animationsToCycle != null) {
-     animationToPlay = activeArea.getNextAnimation();
+      animationToPlay = activeArea.getNextAnimation();
     }
 
-      if(activeArea.hasRequiredAnimation && _lastPlayedAnimation ==activeArea.animationRequired) {
-        print('SmartFlare:Info - Last played animation is $_lastPlayedAnimation and $animationToPlay has a guard against it');
-        return;
-      }
-     _animationControls.play(animationToPlay);
-     _lastPlayedAnimation = animationToPlay;
-  }
+    if (activeArea.hasRequiredAnimation &&
+        activeArea.guardComingFrom.contains(_lastPlayedAnimation)) {
+      print(
+          'SmartFlare:Info - Last played animation is $_lastPlayedAnimation and $animationToPlay has a guard against it');
+      return;
+    }
 
+    _animationControls.play(animationToPlay);
+
+    _lastPlayedAnimation = animationToPlay;
+  }
 }
 
 /// This model represents an area ontop of our Smart Flare actor that
@@ -115,9 +130,13 @@ class ActiveArea {
   /// This callback will be fired when the animation area is interacted with
   final Function onAreaTapped;
 
-  /// Set this value to the required animation that needs to be active
-  /// in order for this animation to play
-  final String animationRequired;
+  /// A list of values for the active area to guard against coming from certain animations.
+  final List<String> guardComingFrom;
+
+  /// ()A list of values for the active area to guard against, going to certain animations.
+  // final List<String> guardGoingTo;
+
+  final bool debugArea;
 
   int _nextAnimationIndex = 0;
 
@@ -126,7 +145,8 @@ class ActiveArea {
       this.animationsToCycle,
       this.animationName,
       this.onAreaTapped,
-      this.animationRequired}) {
+      this.guardComingFrom,
+      this.debugArea = false}) {
     if (animationName == null && onAreaTapped == null) {
       print(
           'SmartFlare:Warning - If you want some feedback from the animation add either animationName or onAreaTapped');
@@ -143,7 +163,7 @@ class ActiveArea {
     }
   }
 
-  bool get hasRequiredAnimation => animationRequired != null;
+  bool get hasRequiredAnimation => guardComingFrom != null;
 
   String getNextAnimation() {
     var nextAnimation = animationsToCycle[_nextAnimationIndex];
