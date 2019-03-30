@@ -76,6 +76,17 @@ ActiveArea(
    ),
 ```
 
+Areas can also be defined using relative placements.
+
+```dart
+ RelativeActiveArea(
+    // from (0,0) with a width 35% of animation width and 50% of height
+    area: Rect.fromLTRB(0, 0, 0.35, 0.5),
+    animationName: 'camera_tapped'
+),
+```
+
+
 #### Area Callbacks
 If you want to perform an action when something is tapped, which you probably do you can supply a function to onAreaTapped and run your code in there.
 
@@ -114,12 +125,14 @@ And that's it!
 
 Given a list of animations this actor will play one after the other as it is tapped.
 
+```dart
 CycleFlareActor(
     width: animationWidth,
     height: animationHeight,
     filename: 'assets/button-animation.flr',
     animations: ['deactivate', 'activate'],
   )
+```
 
 ## Contribution
 
