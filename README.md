@@ -108,6 +108,19 @@ ActiveArea(
 
 And that's it!
 
+### Specialised Actors
+
+#### CycleFlareActor
+
+Given a list of animations this actor will play one after the other as it is tapped.
+
+CycleFlareActor(
+    width: animationWidth,
+    height: animationHeight,
+    filename: 'assets/button-animation.flr',
+    animations: ['deactivate', 'activate'],
+  )
+
 ## Contribution
 
 1. Fork it!

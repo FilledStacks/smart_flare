@@ -114,6 +114,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
   }
 }
 
+/// Given a list of animations. This actor will play through them all as it's tapped.
 class CycleFlareActor extends StatefulWidget {
   final String filename;
   final List<String> animations;
@@ -122,16 +123,18 @@ class CycleFlareActor extends StatefulWidget {
   final double width;
   final double height;
 
-
   CycleFlareActor(
       {Key key,
-      this.width,
-      this.height,
-      this.filename,
-      this.animations,
+      @required this.width,
+      @required this.height,
+      @required this.filename,
+      @required this.animations,
       this.startingAnimationindex = 0,
       this.callback})
-      : super(key: key);
+      : super(key: key) {
+        assert(animations != null, 'Animations cannot be null');
+        assert(animations.length > 1, 'To cycle through animations supply more than 1 key,');
+      }
 
   _CycleFlareActorState createState() => _CycleFlareActorState();
 }
@@ -215,8 +218,8 @@ class ActiveArea {
   bool get hasRequiredAnimation => guardComingFrom != null;
 
   String getNextAnimation() {
-    var nextAnimation = animationsToCycle[_nextAnimationIndex];
     _nextAnimationIndex++;
+    var nextAnimation = animationsToCycle[_nextAnimationIndex];
 
     if (_nextAnimationIndex == animationsToCycle.length) {
       _nextAnimationIndex = 0;
