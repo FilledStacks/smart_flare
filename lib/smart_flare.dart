@@ -114,6 +114,52 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
   }
 }
 
+class CycleFlareActor extends StatefulWidget {
+  final String filename;
+  final List<String> animations;
+  final int startingAnimationindex;
+  final Function(String) callback;
+  final double width;
+  final double height;
+
+
+  CycleFlareActor(
+      {Key key,
+      this.width,
+      this.height,
+      this.filename,
+      this.animations,
+      this.startingAnimationindex = 0,
+      this.callback})
+      : super(key: key);
+
+  _CycleFlareActorState createState() => _CycleFlareActorState();
+}
+
+class _CycleFlareActorState extends State<CycleFlareActor> {
+  int animationIndex;
+
+  @override
+  void initState() {
+    animationIndex = widget.startingAnimationindex;
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SmartFlareActor(
+      width: widget.width,
+      height: widget.height,
+      filename: 'assets/button-animation.flr',
+      startingAnimation: widget.animations[animationIndex],
+      activeAreas: [ActiveArea(
+        area: Rect.fromLTWH(0, 0, widget.width, widget.height),
+        animationsToCycle: widget.animations
+      )],
+    );
+  }
+}
+
 /// This model represents an area ontop of our Smart Flare actor that
 /// the user can interact with.
 class ActiveArea {
@@ -138,9 +184,8 @@ class ActiveArea {
   /// Draws debug data over the animation to indicate the active area
   final bool debugArea;
 
-    /// ()A list of values for the active area to guard against, going to certain animations.
+  /// ()A list of values for the active area to guard against, going to certain animations.
   // final List<String> guardGoingTo;
-
 
   int _nextAnimationIndex = 0;
 

@@ -55,12 +55,11 @@ class _FlareDemoState extends State<FlareDemo> {
         backgroundColor: Color.fromARGB(255, 102, 18, 222),
         body: Align(
             alignment: Alignment.bottomCenter,
-            child: SmartFlareActor(
+            child: CycleFlareActor(
               width: animationWidth,
               height: animationHeight,
               filename: 'assets/button-animation.flr',
-              startingAnimation: 'deactivate',
-              activeAreas: activeAreas,
+              animations: ['deactivate', 'activate'],
             )));
   }
 }
