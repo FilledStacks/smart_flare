@@ -59,9 +59,24 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
 
     if (widget.activeAreas != null) {
       var interactiveAreas = widget.activeAreas.map((activeArea) {
+        var isRelativeArea = activeArea is RelativeActiveArea;
+
+        var top = isRelativeArea
+            ? widget.width * activeArea.area.top
+            : activeArea.area.top;
+        var left = isRelativeArea
+            ? widget.height * activeArea.area.left
+            : activeArea.area.left;
+        var width = isRelativeArea
+            ? widget.width * activeArea.area.width
+            : activeArea.area.width;
+        var height = isRelativeArea
+            ? widget.height * activeArea.area.height
+            : activeArea.area.height;
+
         return Positioned(
-            top: activeArea.area.top,
-            left: activeArea.area.left,
+            top: top,
+            left: left,
             child: GestureDetector(
               onTap: () {
                 // print("SmartFlare:INFO - Animation tped");
@@ -72,8 +87,8 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
                 }
               },
               child: Container(
-                width: activeArea.area.width,
-                height: activeArea.area.height,
+                width: width,
+                height: height,
                 decoration: BoxDecoration(
                     color: activeArea.debugArea
                         ? Color.fromARGB(80, 256, 0, 0)
@@ -132,9 +147,10 @@ class CycleFlareActor extends StatefulWidget {
       this.startingAnimationindex = 0,
       this.callback})
       : super(key: key) {
-        assert(animations != null, 'Animations cannot be null');
-        assert(animations.length > 1, 'To cycle through animations supply more than 1 key,');
-      }
+    assert(animations != null, 'Animations cannot be null');
+    assert(animations.length > 1,
+        'To cycle through animations supply more than 1 key,');
+  }
 
   _CycleFlareActorState createState() => _CycleFlareActorState();
 }
@@ -155,10 +171,11 @@ class _CycleFlareActorState extends State<CycleFlareActor> {
       height: widget.height,
       filename: 'assets/button-animation.flr',
       startingAnimation: widget.animations[animationIndex],
-      activeAreas: [ActiveArea(
-        area: Rect.fromLTWH(0, 0, widget.width, widget.height),
-        animationsToCycle: widget.animations
-      )],
+      activeAreas: [
+        ActiveArea(
+            area: Rect.fromLTWH(0, 0, widget.width, widget.height),
+            animationsToCycle: widget.animations)
+      ],
     );
   }
 }
@@ -167,25 +184,25 @@ class _CycleFlareActorState extends State<CycleFlareActor> {
 /// the user can interact with.
 class ActiveArea {
   /// The area that the ActiveArea represents
-  final Rect area;
+  Rect area;
 
   /// The name of the animation to play when a user taps on this
   /// area.
-  final String animationName;
+  String animationName;
 
   /// A list of the animations to cycle through when a user taps this area.
   /// It cycles through from 0 to the end of the list. One animation per tap
   /// This cannot be used together with animation name.
-  final List<String> animationsToCycle;
+  List<String> animationsToCycle;
 
   /// This callback will be fired when the animation area is interacted with
-  final Function onAreaTapped;
+  Function onAreaTapped;
 
   /// A list of values for the active area to guard against coming from certain animations.
-  final List<String> guardComingFrom;
+  List<String> guardComingFrom;
 
   /// Draws debug data over the animation to indicate the active area
-  final bool debugArea;
+  bool debugArea;
 
   /// ()A list of values for the active area to guard against, going to certain animations.
   // final List<String> guardGoingTo;
@@ -219,11 +236,12 @@ class ActiveArea {
 
   String getNextAnimation() {
     _nextAnimationIndex++;
-    var nextAnimation = animationsToCycle[_nextAnimationIndex];
 
     if (_nextAnimationIndex == animationsToCycle.length) {
       _nextAnimationIndex = 0;
     }
+
+    var nextAnimation = animationsToCycle[_nextAnimationIndex];
 
     return nextAnimation;
   }
@@ -232,4 +250,15 @@ class ActiveArea {
   String toString() {
     return 'AnimationName: $animationName - Area: $area - hasOnTapCallback: ${onAreaTapped != null}';
   }
+}
+
+class RelativeActiveArea extends ActiveArea {
+  RelativeActiveArea(
+      {debugArea, area, guardComingFrom, animationName, onAreaTapped})
+      : super(
+            debugArea: debugArea,
+            area: area,
+            guardComingFrom: guardComingFrom,
+            animationName: animationName,
+            onAreaTapped: onAreaTapped);
 }

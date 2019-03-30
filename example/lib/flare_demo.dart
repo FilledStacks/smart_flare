@@ -6,7 +6,6 @@ class FlareDemo extends StatefulWidget {
   _FlareDemoState createState() => _FlareDemoState();
 }
 
-
 class _FlareDemoState extends State<FlareDemo> {
   @override
   Widget build(BuildContext context) {
@@ -15,36 +14,39 @@ class _FlareDemoState extends State<FlareDemo> {
     var thirdOfWidth = animationWidth / 3;
     var activeAreas = [
       // Insert top-left
-      ActiveArea(
-        debugArea: true,
-          area: Rect.fromLTRB(0, 0, thirdOfWidth, animationHeight / 2),
+      RelativeActiveArea(
+          debugArea: true,
+          area: Rect.fromLTRB(0, 0, 0.35, 0.5),
           guardComingFrom: ['deactivate'],
           animationName: 'camera_tapped',
           onAreaTapped: () {
             print('Camera tapped!');
           }),
-          // Insert middle
+      // Insert middle
       ActiveArea(
-        debugArea: true,
-          area: Rect.fromLTWH(thirdOfWidth, 0, thirdOfWidth, animationHeight / 2),
+          // debugArea: true,
+          area:
+              Rect.fromLTWH(thirdOfWidth, 0, thirdOfWidth, animationHeight / 2),
           guardComingFrom: ['deactivate'],
           animationName: 'pulse_tapped',
           onAreaTapped: () {
             print('Pulse tapped!');
           }),
-        // Insert top-right
+      // Insert top-right
       ActiveArea(
-          debugArea: true,
-          area: Rect.fromLTWH(thirdOfWidth*2, 0, thirdOfWidth, animationHeight / 2),
+          // debugArea: true,
+          area: Rect.fromLTWH(
+              thirdOfWidth * 2, 0, thirdOfWidth, animationHeight / 2),
           guardComingFrom: ['deactivate'],
           animationName: 'image_tapped',
           onAreaTapped: () {
             print('Image tapped!');
           }),
-          // Insert bottom half area
+      // Insert bottom half area
       ActiveArea(
-          debugArea: true,
-          area: Rect.fromLTWH(0, animationHeight / 2, animationWidth, animationHeight / 2),
+          // debugArea: true,
+          area: Rect.fromLTWH(
+              0, animationHeight / 2, animationWidth, animationHeight / 2),
           animationsToCycle: ['activate', 'deactivate'],
           onAreaTapped: () {
             print('Activate toggles!');
@@ -55,11 +57,12 @@ class _FlareDemoState extends State<FlareDemo> {
         backgroundColor: Color.fromARGB(255, 102, 18, 222),
         body: Align(
             alignment: Alignment.bottomCenter,
-            child: CycleFlareActor(
+            child: SmartFlareActor(
               width: animationWidth,
               height: animationHeight,
               filename: 'assets/button-animation.flr',
-              animations: ['deactivate', 'activate'],
+              startingAnimation: 'deactivate',
+              activeAreas: activeAreas,
             )));
   }
 }
