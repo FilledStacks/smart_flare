@@ -1,3 +1,4 @@
+import 'package:flare_tutorial/transition_demo.dart';
 import 'package:flutter/material.dart';
 import 'flare_demo.dart';
 
@@ -12,6 +13,6 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: FlareDemo());
+        home: TransitionDemo());
   }
 }
