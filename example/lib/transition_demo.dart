@@ -52,7 +52,6 @@ class _TransitionDemoState extends State<TransitionDemo> {
           height: MediaQuery.of(context).size.height,
           child: FlareActor(
             "assets/tutorial-transition.flr",
-            animation: 'Untitled',
             controller: swipeController,
             fit: BoxFit.fill,
           ),
@@ -107,7 +106,7 @@ class SwipeAdvanceController extends FlareController {
 
   @override
   void initialize(FlutterActorArtboard artboard) {
-    _transition = artboard.getAnimation('Untitled');
+    _transition = artboard.getAnimation('transition-3');
   }
 
   void updateSwiptePosition(double relativeSwipePosition) {
