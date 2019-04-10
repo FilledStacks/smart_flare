@@ -3,6 +3,7 @@ import 'package:flare_flutter/flare.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controller.dart';
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 enum ActorOrientation { Horizontal, Vertical }
 enum ActorAdvancingDirection { LeftToRight, RightToLeft }
@@ -75,26 +76,14 @@ class _PanFlareActorState extends State<PanFlareActor> {
               swipeController.interactionStarted();
             },
             onHorizontalDragUpdate: (tapInfo) {
-              // print('onHorizontalDragUpdate');
               var localPosition = (context.findRenderObject() as RenderBox)
                   .globalToLocal(tapInfo.globalPosition);
-              // swipeController.updateSwipeDelta(tapInfo.delta.dx);
               swipeController.updateSwipePosition(localPosition, tapInfo.delta);
             },
             onHorizontalDragEnd: (tapInfo) {
-              // print('DragEnd');
               swipeController.interactionEnded();
             },
-            onTapDown: (tapInfo) {
-              // print('TapDown');
-              swipeController.interactionStarted();
-            },
-            onTap: () {
-              // print('TapUp');
-              swipeController.interactionEnded();
-            },
-            onTapCancel: () {
-              // print('TapCanel');
+            onHorizontalDragCancel: () {
               // swipeController.interactionEnded();
             },
             child: FlareActor(
@@ -105,19 +94,22 @@ class _PanFlareActorState extends State<PanFlareActor> {
   }
 }
 
+enum _AnimationOrigin { Beginning, End }
+
 class SwipeAdvanceController extends FlareController {
   final double _pageWidth;
   final String _animationName;
   final ActorOrientation _orientation;
   ActorAdvancingDirection _direction;
 
-  ActorAnimation _transition;
+  _AnimationOrigin _currentAnimationOrigin = _AnimationOrigin.Beginning;
+
+  ActorAnimation _animation;
   double _speed = 0.5;
-  double _relativeSwipePosition = 0.0;
-  double _timeToApply = 0.0;
   double _previousTimeToApply = 0.0;
   double _deltaXSinceInteraction = 0.0;
-  bool _advancingThreshold = false;
+  double animationPosition = 0.0;
+  bool _thresholdReached = false;
   bool animationAtEnd = false;
 
   bool _interacting = false;
@@ -136,45 +128,74 @@ class SwipeAdvanceController extends FlareController {
     }
   }
 
-  double get swipePosition => _transition.duration * _relativeSwipePosition;
+  double get swipePosition => _animation.duration * animationPosition;
+
+  double get _animationTimeToApply => _animation.duration * animationPosition;
 
   @override
   bool advance(FlutterActorArtboard artboard, double elapsed) {
-    // _currentTime += elapsed * _speed;
-    if (_interacting) {
-      _timeToApply = swipePosition;
-    } else if (_advancingThreshold && !_interacting) {
-      if (_timeToApply < _transition.duration) {
-        _timeToApply += (elapsed * _speed) % _transition.duration;
-      } else {
-        if (!animationAtEnd) {
-          animationAtEnd = true;
-          _advancingThreshold = false;
-          // if (_direction == ActorAdvancingDirection.RightToLeft) {
-          //   _direction = ActorAdvancingDirection.LeftToRight;
-          // } else if (_direction == ActorAdvancingDirection.LeftToRight) {
-          //   _direction = ActorAdvancingDirection.RightToLeft;
-          // }
-          _deltaXSinceInteraction = _pageWidth;
-          print('Animation@end!_deltaXSinceInteraction: $_deltaXSinceInteraction');
-        }
-      }
-    } else if (!animationAtEnd) {
-      if (_timeToApply > 0) {
-        // Reverse the animation
-        _timeToApply -= 0.05;
-      } else {
-        if (!animationAtEnd) {
-          animationAtEnd = true;
-          // _deltaXSinceInteraction = _pageWidth;
-          _advancingThreshold = false;
-          // if (_direction == ActorAdvancingDirection.RightToLeft) {
-          //   _direction = ActorAdvancingDirection.LeftToRight;
-          // } else if (_direction == ActorAdvancingDirection.LeftToRight) {
-          //   _direction = ActorAdvancingDirection.RightToLeft;
-          // }
+    if (!_interacting) {
+      if (_thresholdReached) {
+        // If we've released the drag and has reached the threshold
 
-          print('Animation back at staer! Swap Direction: $_direction');
+        // If we're coming from the beginning we want to advance the animation until the end
+        var comingFromBeginning =
+            _currentAnimationOrigin == _AnimationOrigin.Beginning;
+        if (comingFromBeginning && animationPosition < 1) {
+          // advance until we get to the end of the animation
+          animationPosition += (elapsed * _speed) % _animation.duration;
+        } else if (!comingFromBeginning && animationPosition > 0) {
+          animationPosition -= (elapsed * _speed) % _animation.duration;
+        } else {
+          // When we get to the end of the animation we want to indicate that and set some values.
+          // Here we prapare for the swipe back
+          if (!animationAtEnd) {
+            // If we are advancing towards the end of the animtion and we're coming from beginning
+            if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
+              // We want to indicate that we are now at the end of the animation.
+              _currentAnimationOrigin = _AnimationOrigin.End;
+              // We also want to set the delta interaction equal to the pagewidth
+              _deltaXSinceInteraction = _pageWidth;
+            } else {
+              // If we're coming from the end, We want to indicate that we are now at the beginning of the animation.
+              _currentAnimationOrigin = _AnimationOrigin.Beginning;
+              // We want our delta Since interaction to reflect the same
+              _deltaXSinceInteraction = 0;
+            }
+
+            animationAtEnd = true;
+            _thresholdReached = false;
+            // Set the _deltaXSinceInteraction to the full width of the actor so that swiping back
+            // Will decrease the value vausing the animation to reverse.
+            print(
+                'Animation@end!_deltaXSinceInteraction: $_deltaXSinceInteraction, _currentAnimationOrigin: $_currentAnimationOrigin');
+          }
+        }
+      } else if (!animationAtEnd) {
+        // If the animation has not ended and we haven't reached the threshold yet
+        var reverseAnimation = _currentAnimationOrigin == _AnimationOrigin.Beginning;
+        var reverseValue = max(animationPosition * 0.1, 0.005);
+        if (reverseAnimation && animationPosition > 0) {
+          animationPosition -= reverseValue;
+          print('ReverseAnimation GO BACK TO BEGINNING !! $animationPosition');
+        } else if (!reverseAnimation && animationPosition < 1) {
+          animationPosition += reverseValue;
+          print('ReverseAnimation GO TO END !! $animationPosition');
+        } else {
+          // If we're reversing the animation and we get to the end we want to set
+          // the delta interaction back to 0 so that we can start from the beginning
+          if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
+            _deltaXSinceInteraction = 0;
+          } else {
+            // If we're reversing back to the end then we want to set the
+            // deltaXSinceInteraction equal to the pageWidth so we can play animation from the end.
+            _deltaXSinceInteraction = _pageWidth;
+          }
+
+          animationAtEnd = true;
+          _thresholdReached = false;
+          print(
+              'Animation@end!_deltaXSinceInteraction: $_deltaXSinceInteraction, _currentAnimationOrigin: $_currentAnimationOrigin');
         }
       }
     }
@@ -183,50 +204,61 @@ class SwipeAdvanceController extends FlareController {
       // print('Advance.\ntransition_duration: ${_transition.duration}\ntransitionPosition: $transitionPosition\ntimeToApply: $timeToApply');
     }
 
-    if (_previousTimeToApply != _timeToApply) {
-      print('swipePosition: $swipePosition, _timeToApply: $_timeToApply');
-      _transition.apply(_timeToApply, artboard, 1.0);
+    if (_previousTimeToApply != _animationTimeToApply) {
+      print('swipePosition: $swipePosition, _timeToApply: $animationPosition');
+      _animation.apply(_animationTimeToApply, artboard, 1.0);
     }
 
-    _previousTimeToApply = _timeToApply;
+    _previousTimeToApply = _animationTimeToApply;
     return true;
   }
 
   @override
   void initialize(FlutterActorArtboard artboard) {
-    _transition = artboard.getAnimation(_animationName);
+    _animation = artboard.getAnimation(_animationName);
   }
 
   void updateSwipePosition(Offset touchPosition, Offset touchDelta) {
+    animationAtEnd = false;
+
     var insideBounds = touchPosition.dx > 0 &&
         touchPosition.dx < _pageWidth &&
         touchPosition.dy > 0;
 
     if (insideBounds) {
-      double relativePosition;
-      double relativeBasedOnTotalDelta;
-
       var deltaX = touchDelta.dx;
-        if (_direction == ActorAdvancingDirection.RightToLeft) {
-          deltaX *= -1;
-        }
-
-      _deltaXSinceInteraction += deltaX;
-
-      // _deltaXSinceInteraction *= -1;
-
-      _advancingThreshold = _deltaXSinceInteraction > 100.0;
-
       if (_direction == ActorAdvancingDirection.RightToLeft) {
-        relativeBasedOnTotalDelta = _deltaXSinceInteraction / _pageWidth;
-      } else {
-        relativeBasedOnTotalDelta =
-            1.0 - (_deltaXSinceInteraction / _pageWidth);
+        deltaX *= -1;
       }
 
-      _relativeSwipePosition = relativeBasedOnTotalDelta;
       print(
-          'relativeBasedOnTotalDelta: $relativeBasedOnTotalDelta ,_deltaXSinceInteraction: $_deltaXSinceInteraction');
+          'BEFORE: AnimationPosition: $animationPosition, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX (Norm): $deltaX, deltaX (Ridge): ${touchDelta.dx}');
+      _deltaXSinceInteraction += deltaX;
+
+      if (_deltaXSinceInteraction > _pageWidth) {
+        _deltaXSinceInteraction = _pageWidth;
+      }
+      if (_deltaXSinceInteraction < 0) {
+        _deltaXSinceInteraction = 0;
+      }
+
+      if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
+        _thresholdReached = _deltaXSinceInteraction > 100.0;
+      } else {
+        _thresholdReached = _deltaXSinceInteraction < 100.0;
+      }
+
+      if (_direction == ActorAdvancingDirection.RightToLeft) {
+        animationPosition = _deltaXSinceInteraction / _pageWidth;
+      } else {
+        animationPosition = 1.0 - (_deltaXSinceInteraction / _pageWidth);
+      }
+
+      print(
+          'AFTER: AnimationPosition: $animationPosition, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX (Norm): $deltaX, deltaX (Ridge): ${touchDelta.dx}');
+
+      // print(
+      //     'relativeBasedOnTotalDelta: $relativeBasedOnTotalDelta ,_deltaXSinceInteraction: $_deltaXSinceInteraction, _thresholdReached: $_thresholdReached');
     }
   }
 
@@ -238,38 +270,26 @@ class SwipeAdvanceController extends FlareController {
       _deltaXSinceInteraction = 0;
     }
 
-    _relativeSwipePosition =
-        1.0 - (_pageWidth / (_pageWidth + _deltaXSinceInteraction));
-
     // Handle forward animation first
     if (!animationAtEnd) {
-      _advancingThreshold = _deltaXSinceInteraction > 45.0;
+      _thresholdReached = _deltaXSinceInteraction > 45.0;
       print(
-          'Update swipe delta\nthresholdReached: $_advancingThreshold\n_relativeSwipePosition:$_relativeSwipePosition \npageWidth: $_pageWidth\nswipeDeltaX:$swipeDeltaX\ndeltaXSinceInteraction: $_deltaXSinceInteraction');
+          'Update swipe delta\nthresholdReached: $_thresholdReached\n\npageWidth: $_pageWidth\nswipeDeltaX:$swipeDeltaX\ndeltaXSinceInteraction: $_deltaXSinceInteraction');
     } else {
-      _advancingThreshold = _deltaXSinceInteraction < 100.0;
+      _thresholdReached = _deltaXSinceInteraction < 100.0;
     }
   }
 
   void interactionStarted() {
     print('interactionStarted');
+
     _interacting = true;
-
-    var hasReachedAnimationEnd = _timeToApply == _transition.duration;
-    animationAtEnd = hasReachedAnimationEnd && !animationAtEnd;
-
-    print(
-        '**_timeToApply:$_timeToApply,_transition.duration:${_transition.duration} Set animation @ end: $animationAtEnd, pageWidth: $_deltaXSinceInteraction ****');
+    // Indicate that the animation is not at the end as soon as we start
   }
 
   void interactionEnded() {
     print('interactionEnded\n');
     _interacting = false;
-    // _timeToApply = 0;
-    // _relativeSwipePosition = 0;
-    // _deltaXSinceInteraction = 0;
-
-    // _transition.triggerEvents(components, fromTime, toTime, triggerEvents)
   }
 
   @override
