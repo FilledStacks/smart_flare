@@ -18,17 +18,18 @@ class PanFlareActor extends StatefulWidget {
   /// The direction to swipe for the animation to advance
   final ActorAdvancingDirection direction;
 
+  /// Full path to the animation file
   final String animationFilePath;
 
-  /// The name of the animation that has to be advanced while panning
-  final String animationName;
+  /// The name of the animation that has to be played while advancing
+  final String openAnimationName;
 
-  /// The threshold in percentage for animation to complete when gesture is finished.
+  /// The animation that has to be played when going back from advanced position
   ///
-  /// When this threshold is passed and the pan/drag gesture ends the animation will play until it's complete
-  final double thresholdPercentage;
+  /// If none is supplied the open animation will be reversed
+  final String closeAnimationName;
 
-  /// The threshold in pixels for animation to complete when gesture is finished.
+  /// The threshold for animation to complete when gesture is finished. If < 0 it's taken as percentage else pixels.
   ///
   /// When this threshold is passed and the pan/drag gesture ends the animation will play until it's complete
   final double threshold;
@@ -42,9 +43,9 @@ class PanFlareActor extends StatefulWidget {
       this.orientation = ActorOrientation.Horizontal,
       this.direction = ActorAdvancingDirection.LeftToRight,
       @required this.animationFilePath,
-      @required this.animationName,
-      this.thresholdPercentage = 0.5,
-      this.threshold = 200.0,
+      @required this.openAnimationName,
+      this.closeAnimationName,
+      this.threshold,
       this.reverseOnRelease = true});
 
   @override
@@ -58,10 +59,13 @@ class _PanFlareActorState extends State<PanFlareActor> {
   void initState() {
     if (swipeController == null) {
       swipeController = SwipeAdvanceController(
-          pageWidth: widget.width,
-          animationName: widget.animationName,
+          width: widget.width,
+          openAnimationName: widget.openAnimationName,
           direction: widget.direction,
-          orientation: widget.orientation);
+          orientation: widget.orientation,
+          reverseOnRelease: widget.reverseOnRelease,
+          swipeThreshold: widget.threshold,
+          closeAnimationName: widget.closeAnimationName);
     }
     super.initState();
   }
@@ -83,9 +87,6 @@ class _PanFlareActorState extends State<PanFlareActor> {
             onHorizontalDragEnd: (tapInfo) {
               swipeController.interactionEnded();
             },
-            onHorizontalDragCancel: () {
-              // swipeController.interactionEnded();
-            },
             child: FlareActor(
               widget.animationFilePath,
               controller: swipeController,
@@ -97,40 +98,41 @@ class _PanFlareActorState extends State<PanFlareActor> {
 enum _AnimationOrigin { Beginning, End }
 
 class SwipeAdvanceController extends FlareController {
-  final double _pageWidth;
-  final String _animationName;
+  final double width;
+  final String _openAnimationName;
+  final String _closeAnimationName;
   final ActorOrientation _orientation;
   ActorAdvancingDirection _direction;
+  final bool reverseOnRelease;
+  double swipeThreshold;
 
   _AnimationOrigin _currentAnimationOrigin = _AnimationOrigin.Beginning;
 
-  ActorAnimation _animation;
+  ActorAnimation _openAnimation;
+  ActorAnimation _closeAnimation;
   double _speed = 0.5;
   double _previousTimeToApply = 0.0;
   double _deltaXSinceInteraction = 0.0;
   double animationPosition = 0.0;
   bool _thresholdReached = false;
+  bool _interacting = false;
   bool animationAtEnd = false;
 
-  bool _interacting = false;
-
   SwipeAdvanceController(
-      {@required double pageWidth,
-      @required String animationName,
+      {@required this.width,
+      @required String openAnimationName,
+      @required String closeAnimationName,
       @required ActorAdvancingDirection direction,
-      @required ActorOrientation orientation})
-      : _animationName = animationName,
-        _pageWidth = pageWidth,
+      @required ActorOrientation orientation,
+      this.reverseOnRelease,
+      this.swipeThreshold})
+      : _openAnimationName = openAnimationName,
+        _closeAnimationName = closeAnimationName,
         _direction = direction,
-        _orientation = orientation {
-    if (direction == ActorAdvancingDirection.RightToLeft) {
-      // _deltaXSinceInteraction = _pageWidth;
-    }
-  }
+        _orientation = orientation;
 
-  double get swipePosition => _animation.duration * animationPosition;
-
-  double get _animationTimeToApply => _animation.duration * animationPosition;
+  double get _animationTimeToApply =>
+      _openAnimation.duration * animationPosition;
 
   @override
   bool advance(FlutterActorArtboard artboard, double elapsed) {
@@ -143,9 +145,9 @@ class SwipeAdvanceController extends FlareController {
             _currentAnimationOrigin == _AnimationOrigin.Beginning;
         if (comingFromBeginning && animationPosition < 1) {
           // advance until we get to the end of the animation
-          animationPosition += (elapsed * _speed) % _animation.duration;
+          animationPosition += (elapsed * _speed) % _openAnimation.duration;
         } else if (!comingFromBeginning && animationPosition > 0) {
-          animationPosition -= (elapsed * _speed) % _animation.duration;
+          animationPosition -= (elapsed * _speed) % _openAnimation.duration;
         } else {
           // When we get to the end of the animation we want to indicate that and set some values.
           // Here we prapare for the swipe back
@@ -155,7 +157,7 @@ class SwipeAdvanceController extends FlareController {
               // We want to indicate that we are now at the end of the animation.
               _currentAnimationOrigin = _AnimationOrigin.End;
               // We also want to set the delta interaction equal to the pagewidth
-              _deltaXSinceInteraction = _pageWidth;
+              _deltaXSinceInteraction = width;
             } else {
               // If we're coming from the end, We want to indicate that we are now at the beginning of the animation.
               _currentAnimationOrigin = _AnimationOrigin.Beginning;
@@ -165,22 +167,17 @@ class SwipeAdvanceController extends FlareController {
 
             animationAtEnd = true;
             _thresholdReached = false;
-            // Set the _deltaXSinceInteraction to the full width of the actor so that swiping back
-            // Will decrease the value vausing the animation to reverse.
-            print(
-                'Animation@end!_deltaXSinceInteraction: $_deltaXSinceInteraction, _currentAnimationOrigin: $_currentAnimationOrigin');
           }
         }
       } else if (!animationAtEnd) {
         // If the animation has not ended and we haven't reached the threshold yet
-        var reverseAnimation = _currentAnimationOrigin == _AnimationOrigin.Beginning;
-        var reverseValue = max(animationPosition * 0.1, 0.005);
+        var reverseAnimation =
+            _currentAnimationOrigin == _AnimationOrigin.Beginning;
+        var reverseValue = (elapsed * _speed) % _openAnimation.duration;
         if (reverseAnimation && animationPosition > 0) {
           animationPosition -= reverseValue;
-          print('ReverseAnimation GO BACK TO BEGINNING !! $animationPosition');
         } else if (!reverseAnimation && animationPosition < 1) {
           animationPosition += reverseValue;
-          print('ReverseAnimation GO TO END !! $animationPosition');
         } else {
           // If we're reversing the animation and we get to the end we want to set
           // the delta interaction back to 0 so that we can start from the beginning
@@ -189,24 +186,28 @@ class SwipeAdvanceController extends FlareController {
           } else {
             // If we're reversing back to the end then we want to set the
             // deltaXSinceInteraction equal to the pageWidth so we can play animation from the end.
-            _deltaXSinceInteraction = _pageWidth;
+            _deltaXSinceInteraction = width;
           }
 
           animationAtEnd = true;
           _thresholdReached = false;
-          print(
-              'Animation@end!_deltaXSinceInteraction: $_deltaXSinceInteraction, _currentAnimationOrigin: $_currentAnimationOrigin');
         }
       }
     }
 
-    if (_interacting) {
-      // print('Advance.\ntransition_duration: ${_transition.duration}\ntransitionPosition: $transitionPosition\ntimeToApply: $timeToApply');
-    }
-
-    if (_previousTimeToApply != _animationTimeToApply) {
-      print('swipePosition: $swipePosition, _timeToApply: $animationPosition');
-      _animation.apply(_animationTimeToApply, artboard, 1.0);
+    if ((_previousTimeToApply !=
+            _animationTimeToApply) && // Always has to be true. We don't do uneccessary updates
+        (_currentAnimationOrigin ==
+                _AnimationOrigin
+                    .Beginning || // If we're coming from the beginning we want to play the open animation
+            _closeAnimation == null)) {
+      // If we have no closeAnimation defined we want to always play the open animation
+      _openAnimation.apply(_animationTimeToApply, artboard, 1.0);
+    } else if ((_previousTimeToApply !=
+            _animationTimeToApply) && // Always has to be true. We don't do uneccessary updates
+        (_currentAnimationOrigin == _AnimationOrigin.End &&
+            _closeAnimation != null)) {
+      _closeAnimation.apply(_animationTimeToApply, artboard, 1.0);
     }
 
     _previousTimeToApply = _animationTimeToApply;
@@ -215,14 +216,22 @@ class SwipeAdvanceController extends FlareController {
 
   @override
   void initialize(FlutterActorArtboard artboard) {
-    _animation = artboard.getAnimation(_animationName);
+    _openAnimation = artboard.getAnimation(_openAnimationName);
+
+    if (_closeAnimationName != null) {
+      _closeAnimation = artboard.getAnimation(_closeAnimationName);
+    }
+
+    if (swipeThreshold != null && swipeThreshold > 0 && swipeThreshold < 1) {
+      swipeThreshold = width * swipeThreshold;
+    }
   }
 
   void updateSwipePosition(Offset touchPosition, Offset touchDelta) {
     animationAtEnd = false;
 
     var insideBounds = touchPosition.dx > 0 &&
-        touchPosition.dx < _pageWidth &&
+        touchPosition.dx < width &&
         touchPosition.dy > 0;
 
     if (insideBounds) {
@@ -231,64 +240,36 @@ class SwipeAdvanceController extends FlareController {
         deltaX *= -1;
       }
 
-      print(
-          'BEFORE: AnimationPosition: $animationPosition, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX (Norm): $deltaX, deltaX (Ridge): ${touchDelta.dx}');
       _deltaXSinceInteraction += deltaX;
 
-      if (_deltaXSinceInteraction > _pageWidth) {
-        _deltaXSinceInteraction = _pageWidth;
+      if (_deltaXSinceInteraction > width) {
+        _deltaXSinceInteraction = width;
       }
       if (_deltaXSinceInteraction < 0) {
         _deltaXSinceInteraction = 0;
       }
 
-      if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
-        _thresholdReached = _deltaXSinceInteraction > 100.0;
-      } else {
-        _thresholdReached = _deltaXSinceInteraction < 100.0;
+      if (swipeThreshold != null) {
+        if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
+          _thresholdReached = _deltaXSinceInteraction > swipeThreshold;
+        } else {
+          _thresholdReached = _deltaXSinceInteraction < swipeThreshold;
+        }
       }
 
       if (_direction == ActorAdvancingDirection.RightToLeft) {
-        animationPosition = _deltaXSinceInteraction / _pageWidth;
+        animationPosition = _deltaXSinceInteraction / width;
       } else {
-        animationPosition = 1.0 - (_deltaXSinceInteraction / _pageWidth);
+        animationPosition = 1.0 - (_deltaXSinceInteraction / width);
       }
-
-      print(
-          'AFTER: AnimationPosition: $animationPosition, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX (Norm): $deltaX, deltaX (Ridge): ${touchDelta.dx}');
-
-      // print(
-      //     'relativeBasedOnTotalDelta: $relativeBasedOnTotalDelta ,_deltaXSinceInteraction: $_deltaXSinceInteraction, _thresholdReached: $_thresholdReached');
-    }
-  }
-
-  void updateSwipeDelta(double swipeDeltaX) {
-    swipeDeltaX *= -1;
-    _deltaXSinceInteraction += swipeDeltaX;
-
-    if (_deltaXSinceInteraction < 0) {
-      _deltaXSinceInteraction = 0;
-    }
-
-    // Handle forward animation first
-    if (!animationAtEnd) {
-      _thresholdReached = _deltaXSinceInteraction > 45.0;
-      print(
-          'Update swipe delta\nthresholdReached: $_thresholdReached\n\npageWidth: $_pageWidth\nswipeDeltaX:$swipeDeltaX\ndeltaXSinceInteraction: $_deltaXSinceInteraction');
-    } else {
-      _thresholdReached = _deltaXSinceInteraction < 100.0;
     }
   }
 
   void interactionStarted() {
-    print('interactionStarted');
-
     _interacting = true;
-    // Indicate that the animation is not at the end as soon as we start
   }
 
   void interactionEnded() {
-    print('interactionEnded\n');
     _interacting = false;
   }
 
