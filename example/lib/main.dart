@@ -1,6 +1,5 @@
-import 'package:flare_tutorial/transition_demo.dart';
+import 'package:flare_tutorial/pan_actor_demo.dart';
 import 'package:flutter/material.dart';
-import 'flare_demo.dart';
 
 void main() => runApp(MyApp());
 
@@ -13,6 +12,6 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: TransitionDemo());
+        home: PanActorDemo());
   }
 }

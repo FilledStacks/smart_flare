@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flare_dart/math/mat2d.dart';
 import 'package:flare_flutter/flare.dart';
 import 'package:flare_flutter/flare_controller.dart';
@@ -13,6 +16,15 @@ class TransitionDemo extends StatefulWidget {
 class _TransitionDemoState extends State<TransitionDemo> {
   FlareControls controls = FlareControls();
   SwipeAdvanceController swipeController;
+  CustomPageController pageController;
+
+  Map<int, Color> colorMap = {
+    0: Colors.red,
+    1: Colors.green,
+    2: Colors.blue,
+    3: Colors.yellow,
+    4: Colors.pink,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +32,9 @@ class _TransitionDemoState extends State<TransitionDemo> {
 
     if (swipeController == null) {
       swipeController = SwipeAdvanceController(pageWidth: screenWidth);
+      pageController = CustomPageController();
     }
     return Scaffold(
-      backgroundColor: Colors.red,
       body: GestureDetector(
         onHorizontalDragStart: (tapInfo) {
           swipeController.interactionStarted();
@@ -30,6 +42,7 @@ class _TransitionDemoState extends State<TransitionDemo> {
         onHorizontalDragUpdate: (tapInfo) {
           // print('onHorizontalDragUpdate');
           swipeController.updateSwipeDelta(tapInfo.delta.dx);
+          pageController.updateOffset(tapInfo.delta.dx);
         },
         onHorizontalDragEnd: (tapInfo) {
           // print('DragEnd');
@@ -47,18 +60,42 @@ class _TransitionDemoState extends State<TransitionDemo> {
           // print('TapCanel');
           // swipeController.interactionEnded();
         },
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height,
-          child: FlareActor(
-            "assets/tutorial-transition.flr",
-            animation: 'Untitled',
-            controller: swipeController,
-            fit: BoxFit.fill,
+        child: AbsorbPointer(
+          child: PageView.builder(
+            itemCount: 5,
+            controller: pageController,
+            itemBuilder: (buildContext, index) {
+              return Container(
+                  color: colorMap[index],
+                  width: MediaQuery.of(context).size.width,
+                  height: MediaQuery.of(context).size.height,
+                  child: FlareActor(
+                    "assets/tutorial-transition.flr",
+                    controller: swipeController,
+                    fit: BoxFit.fill,
+                  ));
+            },
           ),
         ),
       ),
     );
+  }
+
+  void onPageScroll() {}
+}
+
+class CustomPageController extends PageController {
+  double _internalXOffset = 0.0;
+
+  @override
+  double get offset => _internalXOffset;
+
+  void updateOffset(double dragChange) {
+    
+    dragChange *= -1;
+    _internalXOffset += dragChange;
+    print('Updated offset: $_internalXOffset');
+    this.animateTo(offset, duration: Duration(milliseconds: 50,), curve: ElasticInCurve());
   }
 }
 
@@ -85,9 +122,9 @@ class SwipeAdvanceController extends FlareController {
   @override
   bool advance(FlutterActorArtboard artboard, double elapsed) {
     // _currentTime += elapsed * _speed;
-    if (_interacting && !thresholdReached) {
+    if (_interacting) {
       timeToApply = transitionPosition;
-    } else if (thresholdReached) {
+    } else if (thresholdReached && !_interacting) {
       timeToApply += (elapsed * _speed) % _transition.duration;
     } else {
       if (timeToApply > 0) {
@@ -107,7 +144,7 @@ class SwipeAdvanceController extends FlareController {
 
   @override
   void initialize(FlutterActorArtboard artboard) {
-    _transition = artboard.getAnimation('Untitled');
+    _transition = artboard.getAnimation('transition-3');
   }
 
   void updateSwiptePosition(double relativeSwipePosition) {
@@ -145,5 +182,46 @@ class SwipeAdvanceController extends FlareController {
   @override
   void setViewTransform(Mat2D viewTransform) {
     // TODO: implement setViewTransform
+  }
+}
+
+class CustomSimulation extends Simulation {
+  final double initPosition;
+  final double velocity;
+
+  CustomSimulation({@required this.initPosition, @required this.velocity});
+
+  @override
+  double dx(double time) {
+    return velocity;
+  }
+
+  @override
+  bool isDone(double time) {
+    // TODO: implement isDone
+    return false;
+  }
+
+  @override
+  double x(double time) {
+    var max =
+        math.max(math.min(initPosition, 0.0), initPosition + velocity * time);
+    print(max.toString());
+    return max;
+  }
+}
+
+class CustomScrollPhysics extends ScrollPhysics {
+  @override
+  ScrollPhysics applyTo(ScrollPhysics ancestor) {
+    // TODO: implement applyTo
+    return CustomScrollPhysics();
+  }
+
+  @override
+  Simulation createBallisticSimulation(
+      ScrollMetrics position, double velocity) {
+    // TODO: implement createBallisticSimulation
+    return CustomSimulation(initPosition: position.pixels, velocity: velocity);
   }
 }
