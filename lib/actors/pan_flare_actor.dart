@@ -109,7 +109,7 @@ class SwipeAdvanceController extends FlareController {
   final double _pageWidth;
   final String _animationName;
   final ActorOrientation _orientation;
-  final ActorAdvancingDirection _direction;
+  ActorAdvancingDirection _direction;
 
   ActorAnimation _transition;
   double _speed = 0.5;
@@ -117,7 +117,7 @@ class SwipeAdvanceController extends FlareController {
   double _timeToApply = 0.0;
   double _previousTimeToApply = 0.0;
   double _deltaXSinceInteraction = 0.0;
-  bool _goingThreshold = false;
+  bool _advancingThreshold = false;
   bool animationAtEnd = false;
 
   bool _interacting = false;
@@ -132,7 +132,7 @@ class SwipeAdvanceController extends FlareController {
         _direction = direction,
         _orientation = orientation {
     if (direction == ActorAdvancingDirection.RightToLeft) {
-      _deltaXSinceInteraction = _pageWidth;
+      // _deltaXSinceInteraction = _pageWidth;
     }
   }
 
@@ -143,19 +143,39 @@ class SwipeAdvanceController extends FlareController {
     // _currentTime += elapsed * _speed;
     if (_interacting) {
       _timeToApply = swipePosition;
-    } else if (_goingThreshold && !_interacting) {
+    } else if (_advancingThreshold && !_interacting) {
       if (_timeToApply < _transition.duration) {
         _timeToApply += (elapsed * _speed) % _transition.duration;
       } else {
         if (!animationAtEnd) {
-          print('Animation has ended!!!!');
           animationAtEnd = true;
+          _advancingThreshold = false;
+          // if (_direction == ActorAdvancingDirection.RightToLeft) {
+          //   _direction = ActorAdvancingDirection.LeftToRight;
+          // } else if (_direction == ActorAdvancingDirection.LeftToRight) {
+          //   _direction = ActorAdvancingDirection.RightToLeft;
+          // }
+          _deltaXSinceInteraction = _pageWidth;
+          print('Animation@end!_deltaXSinceInteraction: $_deltaXSinceInteraction');
         }
       }
-    } else {
+    } else if (!animationAtEnd) {
       if (_timeToApply > 0) {
         // Reverse the animation
         _timeToApply -= 0.05;
+      } else {
+        if (!animationAtEnd) {
+          animationAtEnd = true;
+          // _deltaXSinceInteraction = _pageWidth;
+          _advancingThreshold = false;
+          // if (_direction == ActorAdvancingDirection.RightToLeft) {
+          //   _direction = ActorAdvancingDirection.LeftToRight;
+          // } else if (_direction == ActorAdvancingDirection.LeftToRight) {
+          //   _direction = ActorAdvancingDirection.RightToLeft;
+          // }
+
+          print('Animation back at staer! Swap Direction: $_direction');
+        }
       }
     }
 
@@ -186,17 +206,22 @@ class SwipeAdvanceController extends FlareController {
       double relativePosition;
       double relativeBasedOnTotalDelta;
 
-      if (_direction == ActorAdvancingDirection.LeftToRight) {
-        _deltaXSinceInteraction += (-1 * touchDelta.dx);
-        relativePosition = touchPosition.dx / _pageWidth;
+      var deltaX = touchDelta.dx;
+        if (_direction == ActorAdvancingDirection.RightToLeft) {
+          deltaX *= -1;
+        }
+
+      _deltaXSinceInteraction += deltaX;
+
+      // _deltaXSinceInteraction *= -1;
+
+      _advancingThreshold = _deltaXSinceInteraction > 100.0;
+
+      if (_direction == ActorAdvancingDirection.RightToLeft) {
         relativeBasedOnTotalDelta = _deltaXSinceInteraction / _pageWidth;
       } else {
-        _deltaXSinceInteraction += touchDelta.dx;
-        relativePosition = 1.0 - (touchPosition.dx / _pageWidth);
         relativeBasedOnTotalDelta =
             1.0 - (_deltaXSinceInteraction / _pageWidth);
-
-        _goingThreshold = _deltaXSinceInteraction < 150.0;
       }
 
       _relativeSwipePosition = relativeBasedOnTotalDelta;
@@ -218,11 +243,11 @@ class SwipeAdvanceController extends FlareController {
 
     // Handle forward animation first
     if (!animationAtEnd) {
-      _goingThreshold = _deltaXSinceInteraction > 45.0;
+      _advancingThreshold = _deltaXSinceInteraction > 45.0;
       print(
-          'Update swipe delta\nthresholdReached: $_goingThreshold\n_relativeSwipePosition:$_relativeSwipePosition \npageWidth: $_pageWidth\nswipeDeltaX:$swipeDeltaX\ndeltaXSinceInteraction: $_deltaXSinceInteraction');
+          'Update swipe delta\nthresholdReached: $_advancingThreshold\n_relativeSwipePosition:$_relativeSwipePosition \npageWidth: $_pageWidth\nswipeDeltaX:$swipeDeltaX\ndeltaXSinceInteraction: $_deltaXSinceInteraction');
     } else {
-      _goingThreshold = _deltaXSinceInteraction < 100.0;
+      _advancingThreshold = _deltaXSinceInteraction < 100.0;
     }
   }
 
@@ -241,13 +266,8 @@ class SwipeAdvanceController extends FlareController {
     print('interactionEnded\n');
     _interacting = false;
     // _timeToApply = 0;
-    _relativeSwipePosition = 0;
-
-    if (_direction == ActorAdvancingDirection.RightToLeft) {
-      _deltaXSinceInteraction = _pageWidth;
-    } else {
-      _deltaXSinceInteraction = 0;
-    }
+    // _relativeSwipePosition = 0;
+    // _deltaXSinceInteraction = 0;
 
     // _transition.triggerEvents(components, fromTime, toTime, triggerEvents)
   }
