@@ -4,14 +4,18 @@ import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controller.dart';
 import 'package:flutter/material.dart';
 
-enum PanDirection { Horizontal, Vertical }
+enum ActorOrientation { Horizontal, Vertical }
+enum ActorAdvancingDirection { LeftToRight, RightToLeft }
 
 class PanFlareActor extends StatefulWidget {
   final double width;
   final double height;
 
-  /// Direction that the actor will listen for advancing gestures.
-  final PanDirection panDirection;
+  /// Orientation that the actor will listen for advancing gestures.
+  final ActorOrientation orientation;
+
+  /// The direction to swipe for the animation to advance
+  final ActorAdvancingDirection direction;
 
   final String animationFilePath;
 
@@ -34,7 +38,8 @@ class PanFlareActor extends StatefulWidget {
   const PanFlareActor(
       {@required this.width,
       @required this.height,
-      this.panDirection = PanDirection.Horizontal,
+      this.orientation = ActorOrientation.Horizontal,
+      this.direction = ActorAdvancingDirection.LeftToRight,
       @required this.animationFilePath,
       @required this.animationName,
       this.thresholdPercentage = 0.5,
@@ -52,7 +57,10 @@ class _PanFlareActorState extends State<PanFlareActor> {
   void initState() {
     if (swipeController == null) {
       swipeController = SwipeAdvanceController(
-          pageWidth: widget.width, animationName: widget.animationName);
+          pageWidth: widget.width,
+          animationName: widget.animationName,
+          direction: widget.direction,
+          orientation: widget.orientation);
     }
     super.initState();
   }
@@ -68,7 +76,10 @@ class _PanFlareActorState extends State<PanFlareActor> {
             },
             onHorizontalDragUpdate: (tapInfo) {
               // print('onHorizontalDragUpdate');
-              swipeController.updateSwipeDelta(tapInfo.delta.dx);
+              var localPosition = (context.findRenderObject() as RenderBox)
+                  .globalToLocal(tapInfo.globalPosition);
+              // swipeController.updateSwipeDelta(tapInfo.delta.dx);
+              swipeController.updateSwipePosition(localPosition, tapInfo.delta);
             },
             onHorizontalDragEnd: (tapInfo) {
               // print('DragEnd');
@@ -95,35 +106,56 @@ class _PanFlareActorState extends State<PanFlareActor> {
 }
 
 class SwipeAdvanceController extends FlareController {
-  final double pageWidth;
-  final String animationName;
+  final double _pageWidth;
+  final String _animationName;
+  final ActorOrientation _orientation;
+  final ActorAdvancingDirection _direction;
 
   ActorAnimation _transition;
   double _speed = 0.5;
   double _relativeSwipePosition = 0.0;
-  double timeToApply = 0.0;
-  double deltaXSinceInteraction = 0.0;
-  bool thresholdReached = false;
+  double _timeToApply = 0.0;
+  double _previousTimeToApply = 0.0;
+  double _deltaXSinceInteraction = 0.0;
+  bool _goingThreshold = false;
+  bool animationAtEnd = false;
 
   bool _interacting = false;
 
   SwipeAdvanceController(
-      {@required this.pageWidth, @required this.animationName});
+      {@required double pageWidth,
+      @required String animationName,
+      @required ActorAdvancingDirection direction,
+      @required ActorOrientation orientation})
+      : _animationName = animationName,
+        _pageWidth = pageWidth,
+        _direction = direction,
+        _orientation = orientation {
+    if (direction == ActorAdvancingDirection.RightToLeft) {
+      _deltaXSinceInteraction = _pageWidth;
+    }
+  }
 
-  double get transitionPosition =>
-      _transition.duration * _relativeSwipePosition;
+  double get swipePosition => _transition.duration * _relativeSwipePosition;
 
   @override
   bool advance(FlutterActorArtboard artboard, double elapsed) {
     // _currentTime += elapsed * _speed;
     if (_interacting) {
-      timeToApply = transitionPosition;
-    } else if (thresholdReached && !_interacting) {
-      timeToApply += (elapsed * _speed) % _transition.duration;
+      _timeToApply = swipePosition;
+    } else if (_goingThreshold && !_interacting) {
+      if (_timeToApply < _transition.duration) {
+        _timeToApply += (elapsed * _speed) % _transition.duration;
+      } else {
+        if (!animationAtEnd) {
+          print('Animation has ended!!!!');
+          animationAtEnd = true;
+        }
+      }
     } else {
-      if (timeToApply > 0) {
+      if (_timeToApply > 0) {
         // Reverse the animation
-        timeToApply -= 0.05;
+        _timeToApply -= 0.05;
       }
     }
 
@@ -131,46 +163,93 @@ class SwipeAdvanceController extends FlareController {
       // print('Advance.\ntransition_duration: ${_transition.duration}\ntransitionPosition: $transitionPosition\ntimeToApply: $timeToApply');
     }
 
-    _transition.apply(timeToApply, artboard, 1.0);
+    if (_previousTimeToApply != _timeToApply) {
+      print('swipePosition: $swipePosition, _timeToApply: $_timeToApply');
+      _transition.apply(_timeToApply, artboard, 1.0);
+    }
 
+    _previousTimeToApply = _timeToApply;
     return true;
   }
 
   @override
   void initialize(FlutterActorArtboard artboard) {
-    _transition = artboard.getAnimation(animationName);
+    _transition = artboard.getAnimation(_animationName);
   }
 
-  void updateSwiptePosition(double relativeSwipePosition) {
-    _relativeSwipePosition = relativeSwipePosition;
+  void updateSwipePosition(Offset touchPosition, Offset touchDelta) {
+    var insideBounds = touchPosition.dx > 0 &&
+        touchPosition.dx < _pageWidth &&
+        touchPosition.dy > 0;
+
+    if (insideBounds) {
+      double relativePosition;
+      double relativeBasedOnTotalDelta;
+
+      if (_direction == ActorAdvancingDirection.LeftToRight) {
+        _deltaXSinceInteraction += (-1 * touchDelta.dx);
+        relativePosition = touchPosition.dx / _pageWidth;
+        relativeBasedOnTotalDelta = _deltaXSinceInteraction / _pageWidth;
+      } else {
+        _deltaXSinceInteraction += touchDelta.dx;
+        relativePosition = 1.0 - (touchPosition.dx / _pageWidth);
+        relativeBasedOnTotalDelta =
+            1.0 - (_deltaXSinceInteraction / _pageWidth);
+
+        _goingThreshold = _deltaXSinceInteraction < 150.0;
+      }
+
+      _relativeSwipePosition = relativeBasedOnTotalDelta;
+      print(
+          'relativeBasedOnTotalDelta: $relativeBasedOnTotalDelta ,_deltaXSinceInteraction: $_deltaXSinceInteraction');
+    }
   }
 
   void updateSwipeDelta(double swipeDeltaX) {
     swipeDeltaX *= -1;
+    _deltaXSinceInteraction += swipeDeltaX;
 
-    deltaXSinceInteraction += swipeDeltaX;
-
-    if (deltaXSinceInteraction < 0) {
-      deltaXSinceInteraction = 0;
+    if (_deltaXSinceInteraction < 0) {
+      _deltaXSinceInteraction = 0;
     }
 
     _relativeSwipePosition =
-        1.0 - (pageWidth / (pageWidth + deltaXSinceInteraction));
+        1.0 - (_pageWidth / (_pageWidth + _deltaXSinceInteraction));
 
-    thresholdReached = deltaXSinceInteraction > 45.0;
-    print(
-        'Update swipe delta\nthresholdReached: $thresholdReached\n_relativeSwipePosition:$_relativeSwipePosition \npageWidth: $pageWidth\nswipeDeltaX:$swipeDeltaX\ndeltaXSinceInteraction: $deltaXSinceInteraction');
+    // Handle forward animation first
+    if (!animationAtEnd) {
+      _goingThreshold = _deltaXSinceInteraction > 45.0;
+      print(
+          'Update swipe delta\nthresholdReached: $_goingThreshold\n_relativeSwipePosition:$_relativeSwipePosition \npageWidth: $_pageWidth\nswipeDeltaX:$swipeDeltaX\ndeltaXSinceInteraction: $_deltaXSinceInteraction');
+    } else {
+      _goingThreshold = _deltaXSinceInteraction < 100.0;
+    }
   }
 
   void interactionStarted() {
-    print('interactionStarted\n\n\n\n');
+    print('interactionStarted');
     _interacting = true;
+
+    var hasReachedAnimationEnd = _timeToApply == _transition.duration;
+    animationAtEnd = hasReachedAnimationEnd && !animationAtEnd;
+
+    print(
+        '**_timeToApply:$_timeToApply,_transition.duration:${_transition.duration} Set animation @ end: $animationAtEnd, pageWidth: $_deltaXSinceInteraction ****');
   }
 
   void interactionEnded() {
-    print('interactionEnded\n\n\n\n');
+    print('interactionEnded\n');
     _interacting = false;
-    deltaXSinceInteraction = 0.0;
+    // _timeToApply = 0;
+    _relativeSwipePosition = 0;
+
+    if (_direction == ActorAdvancingDirection.RightToLeft) {
+      _deltaXSinceInteraction = _pageWidth;
+    } else {
+      _deltaXSinceInteraction = 0;
+    }
+
+    // _transition.triggerEvents(components, fromTime, toTime, triggerEvents)
   }
 
   @override

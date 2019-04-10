@@ -16,6 +16,7 @@ class PanActorDemo extends StatelessWidget {
           height: screenSize.height,
           animationFilePath: "assets/tutorial-transition.flr",
           animationName: 'open-drawer',
+          direction: ActorAdvancingDirection.RightToLeft,
         )),
       )
     );
