@@ -12,11 +12,14 @@ class PanActorDemo extends StatelessWidget {
         child: Align(
           alignment: Alignment.centerRight,
           child: PanFlareActor(
-          width: 240.0,
+          width: 135.0,
           height: screenSize.height,
-          animationFilePath: "assets/tutorial-transition.flr",
-          animationName: 'open-drawer',
+          filename: "assets/tutorial-transition.flr",
+          openAnimation: 'drawer-open',
+          closeAnimation: 'drawer-close',
           direction: ActorAdvancingDirection.RightToLeft,
+          threshold: 60.0,
+          reverseOnRelease: true,
         )),
       )
     );

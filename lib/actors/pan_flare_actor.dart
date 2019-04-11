@@ -12,23 +12,21 @@ class PanFlareActor extends StatefulWidget {
   final double width;
   final double height;
 
-  /// Orientation that the actor will listen for advancing gestures.
-  final ActorOrientation orientation;
-
   /// The direction to swipe for the animation to advance
   final ActorAdvancingDirection direction;
 
-  final String animationFilePath;
+  /// Full path to the animation file
+  final String filename;
 
-  /// The name of the animation that has to be advanced while panning
-  final String animationName;
+  /// The name of the animation that has to be played while advancing
+  final String openAnimation;
 
-  /// The threshold in percentage for animation to complete when gesture is finished.
+  /// The animation that has to be played when going back from advanced position
   ///
-  /// When this threshold is passed and the pan/drag gesture ends the animation will play until it's complete
-  final double thresholdPercentage;
+  /// If none is supplied the open animation will be reversed
+  final String closeAnimation;
 
-  /// The threshold in pixels for animation to complete when gesture is finished.
+  /// The threshold for animation to complete when gesture is finished. If < 0 it's taken as percentage else pixels.
   ///
   /// When this threshold is passed and the pan/drag gesture ends the animation will play until it's complete
   final double threshold;
@@ -39,12 +37,11 @@ class PanFlareActor extends StatefulWidget {
   const PanFlareActor(
       {@required this.width,
       @required this.height,
-      this.orientation = ActorOrientation.Horizontal,
       this.direction = ActorAdvancingDirection.LeftToRight,
-      @required this.animationFilePath,
-      @required this.animationName,
-      this.thresholdPercentage = 0.5,
-      this.threshold = 200.0,
+      @required this.filename,
+      @required this.openAnimation,
+      this.closeAnimation,
+      this.threshold,
       this.reverseOnRelease = true});
 
   @override
@@ -58,10 +55,12 @@ class _PanFlareActorState extends State<PanFlareActor> {
   void initState() {
     if (swipeController == null) {
       swipeController = SwipeAdvanceController(
-          pageWidth: widget.width,
-          animationName: widget.animationName,
+          width: widget.width,
+          openAnimationName: widget.openAnimation,
           direction: widget.direction,
-          orientation: widget.orientation);
+          reverseOnRelease: widget.reverseOnRelease,
+          swipeThreshold: widget.threshold,
+          closeAnimationName: widget.closeAnimation);
     }
     super.initState();
   }
@@ -83,11 +82,8 @@ class _PanFlareActorState extends State<PanFlareActor> {
             onHorizontalDragEnd: (tapInfo) {
               swipeController.interactionEnded();
             },
-            onHorizontalDragCancel: () {
-              // swipeController.interactionEnded();
-            },
             child: FlareActor(
-              widget.animationFilePath,
+              widget.filename,
               controller: swipeController,
               fit: BoxFit.contain,
             )));
@@ -97,198 +93,316 @@ class _PanFlareActorState extends State<PanFlareActor> {
 enum _AnimationOrigin { Beginning, End }
 
 class SwipeAdvanceController extends FlareController {
-  final double _pageWidth;
-  final String _animationName;
-  final ActorOrientation _orientation;
+  final double width;
+  final String _openAnimationName;
+  final String _closeAnimationName;
   ActorAdvancingDirection _direction;
+  final bool reverseOnRelease;
+  double swipeThreshold;
 
   _AnimationOrigin _currentAnimationOrigin = _AnimationOrigin.Beginning;
 
-  ActorAnimation _animation;
+  ActorAnimation _openAnimation;
+  ActorAnimation _closeAnimation;
   double _speed = 0.5;
   double _previousTimeToApply = 0.0;
   double _deltaXSinceInteraction = 0.0;
-  double animationPosition = 0.0;
+  double _openAnimationPosition = 0.0;
+  double _closeAnimationPosition = 0.0;
   bool _thresholdReached = false;
+  bool _interacting = false;
   bool animationAtEnd = false;
 
-  bool _interacting = false;
-
   SwipeAdvanceController(
-      {@required double pageWidth,
-      @required String animationName,
+      {@required this.width,
+      @required String openAnimationName,
+      @required String closeAnimationName,
       @required ActorAdvancingDirection direction,
-      @required ActorOrientation orientation})
-      : _animationName = animationName,
-        _pageWidth = pageWidth,
-        _direction = direction,
-        _orientation = orientation {
-    if (direction == ActorAdvancingDirection.RightToLeft) {
-      // _deltaXSinceInteraction = _pageWidth;
-    }
-  }
+      @required ActorOrientation orientation,
+      this.reverseOnRelease,
+      this.swipeThreshold})
+      : _openAnimationName = openAnimationName,
+        _closeAnimationName = closeAnimationName,
+        _direction = direction;
 
-  double get swipePosition => _animation.duration * animationPosition;
+  bool get _hasCloseAnimation => _closeAnimation != null;
 
-  double get _animationTimeToApply => _animation.duration * animationPosition;
+  bool get _playCloseAnimation =>
+      _hasCloseAnimation && _currentAnimationOrigin == _AnimationOrigin.End;
+
+  double get _animationTimeToApply =>
+      _openAnimation.duration * _openAnimationPosition;
+  double get _closeAnimationTimeToApply =>
+      _closeAnimation.duration * _closeAnimationPosition;
 
   @override
   bool advance(FlutterActorArtboard artboard, double elapsed) {
+    if (!_playCloseAnimation) {
+      _advanceOnlyOpenAnimation(elapsed);
+    } else {
+      _advanceClosingAnimation(elapsed);
+    }
+
+    if ((_previousTimeToApply !=
+            _animationTimeToApply) && // Always has to be true. We don't do uneccessary updates
+        (_currentAnimationOrigin ==
+                _AnimationOrigin
+                    .Beginning || // If we're coming from the beginning we want to play the open animation
+            _closeAnimation == null)) {
+      // If we have no closeAnimation defined we want to always play the open animation
+      _openAnimation.apply(_animationTimeToApply, artboard, 1.0);
+      _previousTimeToApply = _animationTimeToApply;
+    } else if ((_previousTimeToApply !=
+            _closeAnimationTimeToApply) && // Always has to be true. We don't do uneccessary updates
+        (_currentAnimationOrigin == _AnimationOrigin.End &&
+            _closeAnimation != null)) {
+      print(
+          'PLAY CLOSEANIMATION: _closeAnimationTimeToApply: $_closeAnimationTimeToApply, closeAnimationPosition: $_closeAnimationPosition');
+      _closeAnimation.apply(_closeAnimationTimeToApply, artboard, 1.0);
+      _previousTimeToApply = _closeAnimationTimeToApply;
+    }
+
+    return true;
+  }
+
+  void _advanceClosingAnimation(double elapsed) {
+    if (!_interacting) {
+      if (_thresholdReached) {
+        _updateClosingAnimation(elapsed);
+      } else if (!animationAtEnd && reverseOnRelease) {
+        _reverseCloseAnimation(elapsed);
+      }
+    }
+  }
+
+  void _advanceOnlyOpenAnimation(double elapsed) {
     if (!_interacting) {
       if (_thresholdReached) {
         // If we've released the drag and has reached the threshold
-
-        // If we're coming from the beginning we want to advance the animation until the end
-        var comingFromBeginning =
-            _currentAnimationOrigin == _AnimationOrigin.Beginning;
-        if (comingFromBeginning && animationPosition < 1) {
-          // advance until we get to the end of the animation
-          animationPosition += (elapsed * _speed) % _animation.duration;
-        } else if (!comingFromBeginning && animationPosition > 0) {
-          animationPosition -= (elapsed * _speed) % _animation.duration;
-        } else {
-          // When we get to the end of the animation we want to indicate that and set some values.
-          // Here we prapare for the swipe back
-          if (!animationAtEnd) {
-            // If we are advancing towards the end of the animtion and we're coming from beginning
-            if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
-              // We want to indicate that we are now at the end of the animation.
-              _currentAnimationOrigin = _AnimationOrigin.End;
-              // We also want to set the delta interaction equal to the pagewidth
-              _deltaXSinceInteraction = _pageWidth;
-            } else {
-              // If we're coming from the end, We want to indicate that we are now at the beginning of the animation.
-              _currentAnimationOrigin = _AnimationOrigin.Beginning;
-              // We want our delta Since interaction to reflect the same
-              _deltaXSinceInteraction = 0;
-            }
-
-            animationAtEnd = true;
-            _thresholdReached = false;
-            // Set the _deltaXSinceInteraction to the full width of the actor so that swiping back
-            // Will decrease the value vausing the animation to reverse.
-            print(
-                'Animation@end!_deltaXSinceInteraction: $_deltaXSinceInteraction, _currentAnimationOrigin: $_currentAnimationOrigin');
-          }
-        }
-      } else if (!animationAtEnd) {
-        // If the animation has not ended and we haven't reached the threshold yet
-        var reverseAnimation = _currentAnimationOrigin == _AnimationOrigin.Beginning;
-        var reverseValue = max(animationPosition * 0.1, 0.005);
-        if (reverseAnimation && animationPosition > 0) {
-          animationPosition -= reverseValue;
-          print('ReverseAnimation GO BACK TO BEGINNING !! $animationPosition');
-        } else if (!reverseAnimation && animationPosition < 1) {
-          animationPosition += reverseValue;
-          print('ReverseAnimation GO TO END !! $animationPosition');
-        } else {
-          // If we're reversing the animation and we get to the end we want to set
-          // the delta interaction back to 0 so that we can start from the beginning
-          if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
-            _deltaXSinceInteraction = 0;
-          } else {
-            // If we're reversing back to the end then we want to set the
-            // deltaXSinceInteraction equal to the pageWidth so we can play animation from the end.
-            _deltaXSinceInteraction = _pageWidth;
-          }
-
-          animationAtEnd = true;
-          _thresholdReached = false;
-          print(
-              'Animation@end!_deltaXSinceInteraction: $_deltaXSinceInteraction, _currentAnimationOrigin: $_currentAnimationOrigin');
-        }
+        _updateAnimationForNoCloseAnimationSupplied(elapsed);
+      } else if (!animationAtEnd && reverseOnRelease) {
+        _reverseOpenAnimation(elapsed);
       }
     }
+  }
 
-    if (_interacting) {
-      // print('Advance.\ntransition_duration: ${_transition.duration}\ntransitionPosition: $transitionPosition\ntimeToApply: $timeToApply');
+  void _reverseOpenAnimation(double elapsed) {
+    // If the animation has not ended and we haven't reached the threshold yet
+    var reverseAnimation =
+        _currentAnimationOrigin == _AnimationOrigin.Beginning;
+    var reverseValue = (elapsed * _speed) % _openAnimation.duration;
+    if (reverseAnimation && _openAnimationPosition > 0) {
+      _openAnimationPosition -= reverseValue;
+    } else if (!reverseAnimation && _openAnimationPosition < 1) {
+      _openAnimationPosition += reverseValue;
+    } else {
+      _handleOpenAnimationReverseComplete();
+    }
+  }
+
+  void _handleOpenAnimationReverseComplete() {
+    // If we're reversing the animation and we get to the end we want to set
+    // the delta interaction back to 0 so that we can start from the beginning
+    if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
+      _deltaXSinceInteraction = 0;
+    } else {
+      // If we're reversing back to the end then we want to set the
+      // deltaXSinceInteraction equal to the pageWidth so we can play animation from the end.
+      _deltaXSinceInteraction = width;
     }
 
-    if (_previousTimeToApply != _animationTimeToApply) {
-      print('swipePosition: $swipePosition, _timeToApply: $animationPosition');
-      _animation.apply(_animationTimeToApply, artboard, 1.0);
-    }
+    animationAtEnd = true;
+    _thresholdReached = false;
 
-    _previousTimeToApply = _animationTimeToApply;
-    return true;
+    print(
+        'Animation@end REVERSE: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
+  }
+
+  void _handleCloseAnimationReverseComplete() {
+    // If we're reversing the animation and we get to the end we want to set
+    // the delta interaction back to 0 so that we can start from the beginning
+    _deltaXSinceInteraction = 0;
+    animationAtEnd = true;
+    _thresholdReached = false;
+
+    print(
+        'CLOSING Animation@end REVERSE: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
+  }
+
+  void _updateAnimationForNoCloseAnimationSupplied(double elapsed) {
+    // If we're coming from the beginning we want to advance the animation until the end
+    var comingFromBeginning =
+        _currentAnimationOrigin == _AnimationOrigin.Beginning;
+    if (comingFromBeginning && _openAnimationPosition < 1) {
+      // advance until we get to the end of the animation
+      _openAnimationPosition += (elapsed * _speed) % _openAnimation.duration;
+    } else if (!comingFromBeginning && _openAnimationPosition > 0) {
+      _openAnimationPosition -= (elapsed * _speed) % _openAnimation.duration;
+    } else {
+      // When we get to the end of the animation we want to indicate that and set some values.
+      // Here we prapare for the swipe back
+      if (!animationAtEnd) {
+        // If we are advancing towards the end of the animtion and we're coming from beginning
+        if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
+          // We want to indicate that we are now at the end of the animation.
+          _currentAnimationOrigin = _AnimationOrigin.End;
+          // We also want to set the delta interaction equal to the pagewidth
+          _deltaXSinceInteraction = _playCloseAnimation ? 0 : width;
+        } else {
+          // If we're coming from the end, We want to indicate that we are now at the beginning of the animation.
+          _currentAnimationOrigin = _AnimationOrigin.Beginning;
+          // We want our delta Since interaction to reflect the same
+          _deltaXSinceInteraction = 0;
+        }
+
+        animationAtEnd = true;
+        _thresholdReached = false;
+        // Make sure the position for the closeAnimation is at the beginning.
+        _closeAnimationPosition = 0;
+        print(
+            'Animation@end FORWARD: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
+      }
+    }
+  }
+
+  void _updateClosingAnimation(double elapsed) {
+    if (_closeAnimationPosition < 1) {
+      // advance until we get to the end of the animation
+      _closeAnimationPosition += (elapsed * _speed) % _closeAnimation.duration;
+    } else {
+      // When we get to the end of the animation we want to indicate that and set some values.
+      // Here we prapare for the swipe back
+      if (!animationAtEnd) {
+        // Set back to beginning when we complete the animation
+        _currentAnimationOrigin = _AnimationOrigin.Beginning;
+        // We want our delta Since interaction to reflect the same
+        _deltaXSinceInteraction = 0;
+        // Reset the open animation position since the first frame of the open
+        // animation equals the last frame of the close animation
+        _openAnimationPosition = 0;
+
+        animationAtEnd = true;
+        _thresholdReached = false;
+        print(
+            'CLOSING Animation@end FORWARD: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
+      }
+    }
+  }
+
+  void _reverseCloseAnimation(double elapsed) {
+    // If the animation has not ended and we haven't reached the threshold yet
+
+    var reverseValue = (elapsed * _speed) % _closeAnimation.duration;
+    if (_closeAnimationPosition > 0) {
+      _closeAnimationPosition -= reverseValue;
+    } else {
+      _handleCloseAnimationReverseComplete();
+    }
   }
 
   @override
   void initialize(FlutterActorArtboard artboard) {
-    _animation = artboard.getAnimation(_animationName);
+    _openAnimation = artboard.getAnimation(_openAnimationName);
+
+    if (_closeAnimationName != null) {
+      _closeAnimation = artboard.getAnimation(_closeAnimationName);
+    }
+
+    if (swipeThreshold != null && swipeThreshold > 0 && swipeThreshold < 1) {
+      swipeThreshold = width * swipeThreshold;
+    }
   }
 
   void updateSwipePosition(Offset touchPosition, Offset touchDelta) {
     animationAtEnd = false;
 
     var insideBounds = touchPosition.dx > 0 &&
-        touchPosition.dx < _pageWidth &&
+        touchPosition.dx < width &&
         touchPosition.dy > 0;
 
     if (insideBounds) {
-      var deltaX = touchDelta.dx;
-      if (_direction == ActorAdvancingDirection.RightToLeft) {
-        deltaX *= -1;
-      }
-
-      print(
-          'BEFORE: AnimationPosition: $animationPosition, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX (Norm): $deltaX, deltaX (Ridge): ${touchDelta.dx}');
-      _deltaXSinceInteraction += deltaX;
-
-      if (_deltaXSinceInteraction > _pageWidth) {
-        _deltaXSinceInteraction = _pageWidth;
-      }
-      if (_deltaXSinceInteraction < 0) {
-        _deltaXSinceInteraction = 0;
-      }
-
-      if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
-        _thresholdReached = _deltaXSinceInteraction > 100.0;
+      if (!_playCloseAnimation) {
+        _updateSwipeForSingleOpenAnimation(touchDelta);
       } else {
-        _thresholdReached = _deltaXSinceInteraction < 100.0;
+        _updateSwipeForClosingAnimation(touchDelta);
       }
-
-      if (_direction == ActorAdvancingDirection.RightToLeft) {
-        animationPosition = _deltaXSinceInteraction / _pageWidth;
-      } else {
-        animationPosition = 1.0 - (_deltaXSinceInteraction / _pageWidth);
-      }
-
-      print(
-          'AFTER: AnimationPosition: $animationPosition, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX (Norm): $deltaX, deltaX (Ridge): ${touchDelta.dx}');
-
-      // print(
-      //     'relativeBasedOnTotalDelta: $relativeBasedOnTotalDelta ,_deltaXSinceInteraction: $_deltaXSinceInteraction, _thresholdReached: $_thresholdReached');
     }
   }
 
-  void updateSwipeDelta(double swipeDeltaX) {
-    swipeDeltaX *= -1;
-    _deltaXSinceInteraction += swipeDeltaX;
+  void _updateSwipeForClosingAnimation(Offset touchDelta) {
+    var deltaX = touchDelta.dx;
 
+    // Reverse only when it's left to right because the end animation will be
+    // swiped in the opposite direction but needs to advance normally from 0 - 1
+    if (_direction == ActorAdvancingDirection.LeftToRight) {
+      deltaX *= -1;
+    }
+
+    _deltaXSinceInteraction += deltaX;
+
+    // clamp the _deltaXSinceInteraction value
+    if (_deltaXSinceInteraction > width) {
+      _deltaXSinceInteraction = width;
+    }
     if (_deltaXSinceInteraction < 0) {
       _deltaXSinceInteraction = 0;
     }
 
-    // Handle forward animation first
-    if (!animationAtEnd) {
-      _thresholdReached = _deltaXSinceInteraction > 45.0;
-      print(
-          'Update swipe delta\nthresholdReached: $_thresholdReached\n\npageWidth: $_pageWidth\nswipeDeltaX:$swipeDeltaX\ndeltaXSinceInteraction: $_deltaXSinceInteraction');
-    } else {
-      _thresholdReached = _deltaXSinceInteraction < 100.0;
+    if (swipeThreshold != null) {
+      _thresholdReached = _deltaXSinceInteraction > swipeThreshold;
     }
+
+    if (_direction == ActorAdvancingDirection.RightToLeft) {
+      _closeAnimationPosition = _deltaXSinceInteraction / width;
+    } else {
+      _closeAnimationPosition = 1.0 - (_deltaXSinceInteraction / width);
+    }
+
+    print(
+        'CLOSE SWIPE: closeAnimationPosition: $_closeAnimationPosition, _thresholdReached: $_thresholdReached, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX: $deltaX');
   }
 
-  void interactionStarted() {
-    print('interactionStarted');
+  void _updateSwipeForSingleOpenAnimation(Offset touchDelta) {
+    var deltaX = touchDelta.dx;
 
+    if (_direction == ActorAdvancingDirection.RightToLeft) {
+      deltaX *= -1;
+    }
+
+    _deltaXSinceInteraction += deltaX;
+
+    if (_deltaXSinceInteraction > width) {
+      _deltaXSinceInteraction = width;
+    }
+    if (_deltaXSinceInteraction < 0) {
+      _deltaXSinceInteraction = 0;
+    }
+
+    if (swipeThreshold != null) {
+      if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
+        _thresholdReached = _deltaXSinceInteraction > swipeThreshold;
+      } else {
+        _thresholdReached = _deltaXSinceInteraction < swipeThreshold;
+      }
+    }
+
+    if (_direction == ActorAdvancingDirection.RightToLeft) {
+      _openAnimationPosition = _deltaXSinceInteraction / width;
+    } else {
+      _openAnimationPosition = 1.0 - (_deltaXSinceInteraction / width);
+    }
+
+    print(
+        'OPEN SWIPE: animationPosition: $_openAnimationPosition, _thresholdReached: $_thresholdReached, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX: $deltaX');
+  }
+
+  void _checkThreshold(double animationPosition) {}
+
+  void interactionStarted() {
     _interacting = true;
-    // Indicate that the animation is not at the end as soon as we start
   }
 
   void interactionEnded() {
-    print('interactionEnded\n');
     _interacting = false;
   }
 
