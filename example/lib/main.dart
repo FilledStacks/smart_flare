@@ -1,4 +1,4 @@
-import 'package:flare_tutorial/pan_actor_demo.dart';
+import './pan_actor_demo.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(MyApp());

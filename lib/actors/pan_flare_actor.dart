@@ -3,7 +3,6 @@ import 'package:flare_flutter/flare.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controller.dart';
 import 'package:flutter/material.dart';
-import 'dart:math';
 
 enum ActorOrientation { Horizontal, Vertical }
 enum ActorAdvancingDirection { LeftToRight, RightToLeft }
@@ -118,7 +117,6 @@ class SwipeAdvanceController extends FlareController {
       @required String openAnimationName,
       @required String closeAnimationName,
       @required ActorAdvancingDirection direction,
-      @required ActorOrientation orientation,
       this.reverseOnRelease,
       this.swipeThreshold})
       : _openAnimationName = openAnimationName,
