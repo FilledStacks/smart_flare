@@ -176,9 +176,9 @@ class SwipeAdvanceController extends FlareController {
     if (!_interacting) {
       if (_thresholdReached) {
         _updateClosingAnimation(elapsed);
+      } else if (!animationAtEnd && reverseOnRelease) {
+        _reverseCloseAnimation(elapsed);
       }
-    } else if (!animationAtEnd && reverseOnRelease) {
-      _reverseCloseAnimation(elapsed);
     }
   }
 
@@ -356,7 +356,7 @@ class SwipeAdvanceController extends FlareController {
     }
 
     if (swipeThreshold != null) {
-      _thresholdReached = _deltaXSinceInteraction < swipeThreshold;
+      _thresholdReached = _deltaXSinceInteraction > swipeThreshold;
     }
 
     if (_direction == ActorAdvancingDirection.RightToLeft) {
@@ -402,6 +402,8 @@ class SwipeAdvanceController extends FlareController {
     print(
         'OPEN SWIPE: animationPosition: $_openAnimationPosition, _thresholdReached: $_thresholdReached, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX: $deltaX');
   }
+
+  void _checkThreshold(double animationPosition) {}
 
   void interactionStarted() {
     _interacting = true;

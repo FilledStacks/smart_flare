@@ -19,7 +19,7 @@ class PanActorDemo extends StatelessWidget {
           closeAnimationName: 'drawer-close',
           direction: ActorAdvancingDirection.RightToLeft,
           threshold: 60.0,
-          reverseOnRelease: false,
+          reverseOnRelease: true,
         )),
       )
     );
