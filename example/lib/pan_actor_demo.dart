@@ -18,7 +18,8 @@ class PanActorDemo extends StatelessWidget {
           openAnimationName: 'drawer-open',
           closeAnimationName: 'drawer-close',
           direction: ActorAdvancingDirection.RightToLeft,
-          threshold: 60.0
+          threshold: 60.0,
+          reverseOnRelease: false,
         )),
       )
     );
