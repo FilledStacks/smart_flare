@@ -14,9 +14,9 @@ class PanActorDemo extends StatelessWidget {
           child: PanFlareActor(
           width: 135.0,
           height: screenSize.height,
-          animationFilePath: "assets/tutorial-transition.flr",
-          openAnimationName: 'drawer-open',
-          closeAnimationName: 'drawer-close',
+          filename: "assets/tutorial-transition.flr",
+          openAnimation: 'drawer-open',
+          closeAnimation: 'drawer-close',
           direction: ActorAdvancingDirection.RightToLeft,
           threshold: 60.0,
           reverseOnRelease: true,

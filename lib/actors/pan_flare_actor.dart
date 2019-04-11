@@ -12,22 +12,19 @@ class PanFlareActor extends StatefulWidget {
   final double width;
   final double height;
 
-  /// Orientation that the actor will listen for advancing gestures.
-  final ActorOrientation orientation;
-
   /// The direction to swipe for the animation to advance
   final ActorAdvancingDirection direction;
 
   /// Full path to the animation file
-  final String animationFilePath;
+  final String filename;
 
   /// The name of the animation that has to be played while advancing
-  final String openAnimationName;
+  final String openAnimation;
 
   /// The animation that has to be played when going back from advanced position
   ///
   /// If none is supplied the open animation will be reversed
-  final String closeAnimationName;
+  final String closeAnimation;
 
   /// The threshold for animation to complete when gesture is finished. If < 0 it's taken as percentage else pixels.
   ///
@@ -40,11 +37,10 @@ class PanFlareActor extends StatefulWidget {
   const PanFlareActor(
       {@required this.width,
       @required this.height,
-      this.orientation = ActorOrientation.Horizontal,
       this.direction = ActorAdvancingDirection.LeftToRight,
-      @required this.animationFilePath,
-      @required this.openAnimationName,
-      this.closeAnimationName,
+      @required this.filename,
+      @required this.openAnimation,
+      this.closeAnimation,
       this.threshold,
       this.reverseOnRelease = true});
 
@@ -60,12 +56,11 @@ class _PanFlareActorState extends State<PanFlareActor> {
     if (swipeController == null) {
       swipeController = SwipeAdvanceController(
           width: widget.width,
-          openAnimationName: widget.openAnimationName,
+          openAnimationName: widget.openAnimation,
           direction: widget.direction,
-          orientation: widget.orientation,
           reverseOnRelease: widget.reverseOnRelease,
           swipeThreshold: widget.threshold,
-          closeAnimationName: widget.closeAnimationName);
+          closeAnimationName: widget.closeAnimation);
     }
     super.initState();
   }
@@ -88,7 +83,7 @@ class _PanFlareActorState extends State<PanFlareActor> {
               swipeController.interactionEnded();
             },
             child: FlareActor(
-              widget.animationFilePath,
+              widget.filename,
               controller: swipeController,
               fit: BoxFit.contain,
             )));
@@ -101,7 +96,6 @@ class SwipeAdvanceController extends FlareController {
   final double width;
   final String _openAnimationName;
   final String _closeAnimationName;
-  final ActorOrientation _orientation;
   ActorAdvancingDirection _direction;
   final bool reverseOnRelease;
   double swipeThreshold;
@@ -129,8 +123,7 @@ class SwipeAdvanceController extends FlareController {
       this.swipeThreshold})
       : _openAnimationName = openAnimationName,
         _closeAnimationName = closeAnimationName,
-        _direction = direction,
-        _orientation = orientation;
+        _direction = direction;
 
   bool get _hasCloseAnimation => _closeAnimation != null;
 

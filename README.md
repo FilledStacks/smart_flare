@@ -134,6 +134,30 @@ CycleFlareActor(
   )
 ```
 
+#### PanFlareActor
+
+Given an open and close animation this actor will play those animations when panned accross it. It plays the open animation in the `direction` supplied. If no close animation is provided the open animation will be reversed when swiping in the "closing" direction.
+
+_Currently only supports horizontal panning. Vertical panning on the way._
+
+```dart
+PanFlareActor(
+    width: 135.0,
+    height: screenSize.height,
+    filename: "assets/tutorial-transition.flr",
+    openAnimation: 'drawer-open',
+    closeAnimation: 'drawer-close',
+    direction: ActorAdvancingDirection.RightToLeft,
+    threshold: 60.0,
+    reverseOnRelease: true,
+  )
+```
+
+**threshold** (optional): Total number of pixels to swipe to play the animation until the end when released.
+
+**reverseOnRelease** (optional. Default true): Tells the actor to reverse the animation when the user stops interacting with the actor and the threshold is not reached.
+
+
 ## Contribution
 
 1. Fork it!
