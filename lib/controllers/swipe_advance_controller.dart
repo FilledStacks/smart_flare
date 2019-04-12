@@ -20,7 +20,7 @@ class SwipeAdvanceController extends FlareControls {
 
   ActorAnimation _openAnimation;
   ActorAnimation _closeAnimation;
-  double _speed = 0.5;
+  double _speed = 1.0;
   double _previousTimeToApply = 0.0;
   double _deltaXSinceInteraction = 0.0;
   double _openAnimationPosition = 0.0;

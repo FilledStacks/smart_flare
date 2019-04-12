@@ -14,18 +14,13 @@ class PanActorDemo extends StatelessWidget {
           child: PanFlareActor(
           width: 135.0,
           height: screenSize.height,
-          filename: "assets/tutorial-transition.flr",
-          openAnimation: 'drawer-open',
-          closeAnimation: 'drawer-close',
+          filename: "assets/gooey-slideout-menu.flr",
+          openAnimation: 'open',
+          closeAnimation: 'close',
           direction: ActorAdvancingDirection.RightToLeft,
-          threshold: 60.0,
+          threshold: 40.0,
           reverseOnRelease: true,
           activeAreas: [
-            RelativeActiveArea(
-              animationName: 'drawer-close',
-              area: Rect.fromLTWH(0, 0, 0.5, 0.1),
-              debugArea: true
-              ),
             RelativePanArea(
               area: Rect.fromLTWH(0, 0.7, 1.0, 0.3),
               debugArea: true
