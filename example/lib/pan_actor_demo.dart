@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smart_flare/actors/pan_flare_actor.dart';
+import 'package:smart_flare/smart_flare.dart';
 
 class PanActorDemo extends StatelessWidget {
   @override
@@ -20,6 +20,17 @@ class PanActorDemo extends StatelessWidget {
           direction: ActorAdvancingDirection.RightToLeft,
           threshold: 60.0,
           reverseOnRelease: true,
+          activeAreas: [
+            RelativeActiveArea(
+              animationName: 'drawer-close',
+              area: Rect.fromLTWH(0, 0, 0.5, 0.1),
+              debugArea: true
+              ),
+            RelativePanArea(
+              area: Rect.fromLTWH(0, 0.7, 1.0, 0.3),
+              debugArea: true
+            )
+          ],
         )),
       )
     );

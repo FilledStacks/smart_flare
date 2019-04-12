@@ -37,6 +37,9 @@ class ActiveArea {
       this.onAreaTapped,
       this.guardComingFrom,
       this.debugArea = false}) {
+
+    assert(area != null, 'Please provide an area for this ActiveArea');
+
     if (animationName == null && onAreaTapped == null) {
       print(
           'SmartFlare:Warning - If you want some feedback from the animation add either animationName or onAreaTapped');
@@ -75,6 +78,17 @@ class ActiveArea {
 
 class RelativeActiveArea extends ActiveArea {
   RelativeActiveArea(
+      {debugArea, area, guardComingFrom, animationName, onAreaTapped})
+      : super(
+            debugArea: debugArea,
+            area: area,
+            guardComingFrom: guardComingFrom,
+            animationName: animationName,
+            onAreaTapped: onAreaTapped);
+}
+
+class RelativePanArea extends RelativeActiveArea {
+  RelativePanArea(
       {debugArea, area, guardComingFrom, animationName, onAreaTapped})
       : super(
             debugArea: debugArea,

@@ -1,6 +1,8 @@
+import 'package:flare_flutter/flare_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
+import 'package:smart_flare/controllers/swipe_advance_controller.dart';
 import '../models.dart';
 
 /// A wrapper to the FlareActor that provides additional user input functionality.
@@ -19,12 +21,25 @@ class SmartFlareActor extends StatefulWidget {
 
   final List<ActiveArea> activeAreas;
 
+  FlareController controller;
+
   SmartFlareActor(
       {@required this.width,
       @required this.height,
       @required this.filename,
       this.startingAnimation,
-      this.activeAreas});
+      this.activeAreas,
+      this.controller}) {
+    if (controller == null) {
+      controller = FlareControls();
+    } else {
+      var hasPanAreaIfSwipeControllerSupplied =
+          controller is SwipeAdvanceController &&
+              activeAreas.firstWhere((area) => area is RelativePanArea) != null;
+      assert(hasPanAreaIfSwipeControllerSupplied,
+          'A RelativePanArea has to be supplied when using the SwipeAdvanceController');
+    }
+  }
 
   _SmartFlareActorState createState() => _SmartFlareActorState();
 }
@@ -32,7 +47,6 @@ class SmartFlareActor extends StatefulWidget {
 class _SmartFlareActorState extends State<SmartFlareActor> {
   String _lastPlayedAnimation;
 
-  final FlareControls _animationControls = FlareControls();
   List<Widget> interactableWidgets;
 
   @override
@@ -41,14 +55,13 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
       print('SmartFlare:Warning: - No starting animation supplied');
     }
 
-    // if (interactableWidgets == null) {
     interactableWidgets = List<Widget>();
     interactableWidgets.add(Container(
       width: widget.width,
       height: widget.height,
       child: FlareActor(
         widget.filename,
-        controller: _animationControls,
+        controller: widget.controller,
         animation: widget.startingAnimation,
       ),
     ));
@@ -58,10 +71,10 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
         var isRelativeArea = activeArea is RelativeActiveArea;
 
         var top = isRelativeArea
-            ? widget.width * activeArea.area.top
+            ? widget.height * activeArea.area.top
             : activeArea.area.top;
         var left = isRelativeArea
-            ? widget.height * activeArea.area.left
+            ? widget.width * activeArea.area.left
             : activeArea.area.left;
         var width = isRelativeArea
             ? widget.width * activeArea.area.width
@@ -70,35 +83,18 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
             ? widget.height * activeArea.area.height
             : activeArea.area.height;
 
+        var isPanArea = activeArea is RelativePanArea;
+
         return Positioned(
             top: top,
             left: left,
-            child: GestureDetector(
-              onTap: () {
-                // print("SmartFlare:INFO - Animation tped");
-                playAnimation(activeArea);
-
-                if (activeArea.onAreaTapped != null) {
-                  activeArea.onAreaTapped();
-                }
-              },
-              child: Container(
-                width: width,
-                height: height,
-                decoration: BoxDecoration(
-                    color: activeArea.debugArea
-                        ? Color.fromARGB(80, 256, 0, 0)
-                        : Colors.transparent,
-                    border: activeArea.debugArea
-                        ? Border.all(color: Colors.blue, width: 1.0)
-                        : null),
-              ),
-            ));
+            child: isPanArea
+                ? _getPanArea(activeArea, width, height)
+                : _getTappableArea(activeArea, width, height));
       });
 
       interactableWidgets.addAll(interactiveAreas);
     }
-    // }
 
     return Stack(children: interactableWidgets);
   }
@@ -119,8 +115,57 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
       return;
     }
 
-    _animationControls.play(animationToPlay);
+    if(widget.controller is SwipeAdvanceController) {
+      (widget.controller as SwipeAdvanceController).play(animationToPlay);
+    } else {
+      (widget.controller as FlareControls).play(animationToPlay);
+    }
+    
 
     _lastPlayedAnimation = animationToPlay;
+  }
+
+  Widget _getTappableArea(ActiveArea activeArea, double width, double height) {
+    return GestureDetector(
+      onTap: () {
+        playAnimation(activeArea);
+
+        if (activeArea.onAreaTapped != null) {
+          activeArea.onAreaTapped();
+        }
+      },
+      child: _activeAreaRepresentation(activeArea, width, height),
+    );
+  }
+
+  Widget _getPanArea(ActiveArea activeArea, double width, double height) {
+    return GestureDetector(
+        onHorizontalDragStart: (tapInfo) {
+          (widget.controller as SwipeAdvanceController).interactionStarted();
+        },
+        onHorizontalDragUpdate: (tapInfo) {
+          var localPosition = (context.findRenderObject() as RenderBox)
+              .globalToLocal(tapInfo.globalPosition);
+          (widget.controller as SwipeAdvanceController)
+              .updateSwipePosition(localPosition, tapInfo.delta);
+        },
+        onHorizontalDragEnd: (tapInfo) {
+          (widget.controller as SwipeAdvanceController).interactionEnded();
+        },
+        child: _activeAreaRepresentation(activeArea, width, height, borderColor: Colors.red));
+  }
+
+  Widget _activeAreaRepresentation(
+      ActiveArea activeArea, double width, double height, {Color borderColor = Colors.blue}) {
+    return Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+            color: activeArea.debugArea
+                ? Color.fromARGB(80, 256, 0, 0)
+                : Colors.transparent,
+            border: activeArea.debugArea
+                ? Border.all(color: borderColor, width: 1.0)
+                : null));
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import './interactive_flare_actor.dart';
+import './smart_flare_actor.dart';
 import '../models.dart';
 
 /// Given a list of animations. This actor will play through them all as it's tapped.
