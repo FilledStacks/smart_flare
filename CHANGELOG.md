@@ -13,3 +13,9 @@ Basic interactions and debug overlay functionality.
 - **PanFlareActor:** Added the new PanFlareActor that allows you to advance your Flare animation by panning accross the device. It comes with a few basic things like reversing on release, a threshold to indicate when to play animatin to the end, swiping direction, using an open and close animation or just open that can be reversed.
 
 **Code Refactor:** Moved the actors into their own folder to keep code more maintainable.
+
+## [0.2.1] - 2019-04-12
+
+- Refactored the PanFlareActor to use the SmartFlareActor and it's interactive areas
+- Added a new ActiveArea type called RelativePanArea which extends the RelativeActiveArea.  _Normal pan area coming soon_
+- Debugable areas show different colors depending on the area type. Tap areas show blue, draggable/pannable areas show red

@@ -3,6 +3,7 @@
 Interactive capabilities for larger Flare animations.
 
 ## Installation
+
 Add smart_slare as dependency to your pubspec file.
 
 ```
@@ -10,7 +11,8 @@ smart_flare: any
 ```
 
 ## Example
-Here is [an example]() of how to use the functionality within this project. 
+
+Here is [an example]() of how to use the functionality within this project.
 
 ## Usage
 
@@ -86,8 +88,8 @@ Areas can also be defined using relative placements.
 ),
 ```
 
-
 #### Area Callbacks
+
 If you want to perform an action when something is tapped, which you probably do you can supply a function to onAreaTapped and run your code in there.
 
 ```dart
@@ -100,7 +102,6 @@ ActiveArea(
     }
    )
 ```
-
 
 #### Guarding against animation
 
@@ -150,6 +151,12 @@ PanFlareActor(
     direction: ActorAdvancingDirection.RightToLeft,
     threshold: 60.0,
     reverseOnRelease: true,
+    activeAreas: [
+      RelativePanArea(
+        area: Rect.fromLTWH(0, 0.7, 1.0, 0.3),
+        debugArea: true
+      )
+    ],
   )
 ```
 
@@ -157,6 +164,7 @@ PanFlareActor(
 
 **reverseOnRelease** (optional. Default true): Tells the actor to reverse the animation when the user stops interacting with the actor and the threshold is not reached.
 
+**activeAreas** (required): You have to supply atleast one relative pan area
 
 ## Contribution
 
