@@ -8,7 +8,7 @@ class PanActorDemo extends StatelessWidget {
     return Scaffold(
       body: 
       Container(
-        color: Colors.green,
+        color: Colors.grey[600],
         child: Align(
           alignment: Alignment.centerRight,
           child: PanFlareActor(
