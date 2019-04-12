@@ -52,6 +52,24 @@ class SwipeAdvanceController extends FlareControls {
       _closeAnimation.duration * _closeAnimationPosition;
 
   @override
+  void initialize(FlutterActorArtboard artboard) {
+    super.initialize(artboard);
+    _openAnimation = artboard.getAnimation(_openAnimationName);
+
+    if (_closeAnimationName != null) {
+      _closeAnimation = artboard.getAnimation(_closeAnimationName);
+    }
+
+    if (swipeThreshold != null && swipeThreshold > 0 && swipeThreshold < 1) {
+      swipeThreshold = width * swipeThreshold;
+    }
+
+    // Indicate the threshold is reached so we can play to the end
+    // of the beginning animation
+    _thresholdReached = true;
+  }
+
+  @override
   bool advance(FlutterActorArtboard artboard, double elapsed) {
     if (_playNormalAnimation) {
       super.advance(artboard, elapsed);
@@ -95,11 +113,6 @@ class SwipeAdvanceController extends FlareControls {
     return true;
   }
 
-  void play(String name, {double mix = 1.0, double mixSeconds = 0.2}) {
-    _playNormalAnimation = true;
-    super.play(name);
-  }
-
   @override
   void onCompleted(String name) {
     _playNormalAnimation = false;
@@ -107,6 +120,11 @@ class SwipeAdvanceController extends FlareControls {
       _updateAnimationPositionToBeginning();
     }
     super.onCompleted(name);
+  }
+
+  void play(String name, {double mix = 1.0, double mixSeconds = 0.2}) {
+    _playNormalAnimation = true;
+    super.play(name);
   }
 
   void _advanceClosingAnimation(double elapsed) {
@@ -246,20 +264,6 @@ class SwipeAdvanceController extends FlareControls {
       _closeAnimationPosition -= reverseValue;
     } else {
       _handleCloseAnimationReverseComplete();
-    }
-  }
-
-  @override
-  void initialize(FlutterActorArtboard artboard) {
-    super.initialize(artboard);
-    _openAnimation = artboard.getAnimation(_openAnimationName);
-
-    if (_closeAnimationName != null) {
-      _closeAnimation = artboard.getAnimation(_closeAnimationName);
-    }
-
-    if (swipeThreshold != null && swipeThreshold > 0 && swipeThreshold < 1) {
-      swipeThreshold = width * swipeThreshold;
     }
   }
 
