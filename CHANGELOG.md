@@ -22,3 +22,8 @@ Basic interactions and debug overlay functionality.
 
 ## [0.2.2] - [0.2.4] 2019-04-12
 Fixed Some weird overriding crash for flare controls play function.
+
+## [0.2.5] - 2019-04-12
+
+- Added completeOnThresholdReached to PanFlareActor to indicate that we want the animation to play until completion once we reach the defined threshold
+- Made sure the animation always starts of at the correct place when the actor is shown for the first time. 
