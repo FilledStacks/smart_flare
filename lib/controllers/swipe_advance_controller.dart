@@ -64,8 +64,10 @@ class SwipeAdvanceController extends FlareControls {
       swipeThreshold = width * swipeThreshold;
     }
 
-    // Indicate the threshold is reached so we can play to the end
-    // of the beginning animation
+    // Set the starting animation as End
+    _currentAnimationOrigin = _AnimationOrigin.End;
+    // Then indicate the threshold is reached so we can play to the end
+    // of the animation (Playing the close animation)
     _thresholdReached = true;
   }
 
