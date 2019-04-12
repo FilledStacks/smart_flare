@@ -19,3 +19,6 @@ Basic interactions and debug overlay functionality.
 - Refactored the PanFlareActor to use the SmartFlareActor and it's interactive areas
 - Added a new ActiveArea type called RelativePanArea which extends the RelativeActiveArea.  _Normal pan area coming soon_
 - Debugable areas show different colors depending on the area type. Tap areas show blue, draggable/pannable areas show red
+
+## [0.2.2] - [0.2.4] 2019-04-12
+Fixed Some weird overriding crash for flare controls play function.

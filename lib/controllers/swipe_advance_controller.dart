@@ -54,14 +54,22 @@ class SwipeAdvanceController extends FlareControls {
   @override
   bool advance(FlutterActorArtboard artboard, double elapsed) {
     if (_playNormalAnimation) {
-      var normalAnimation = super.advance(artboard, elapsed);
-      print('Play normal animation: $normalAnimation');
+      super.advance(artboard, elapsed);
+      // print('Play normal animation: $normalAnimation');
       // return normalAnimation;
 
     } else {
+      if (_openAnimation == null) {
+        return true;
+      }
+
       if (!_playCloseAnimation) {
         _advanceOnlyOpenAnimation(elapsed);
       } else {
+        if (_closeAnimation == null) {
+          return true;
+        }
+
         _advanceClosingAnimation(elapsed);
       }
 
@@ -78,8 +86,8 @@ class SwipeAdvanceController extends FlareControls {
               _closeAnimationTimeToApply) && // Always has to be true. We don't do uneccessary updates
           (_currentAnimationOrigin == _AnimationOrigin.End &&
               _closeAnimation != null)) {
-        print(
-            'PLAY CLOSEANIMATION: _closeAnimationTimeToApply: $_closeAnimationTimeToApply, closeAnimationPosition: $_closeAnimationPosition');
+        // print(
+        //     'PLAY CLOSEANIMATION: _closeAnimationTimeToApply: $_closeAnimationTimeToApply, closeAnimationPosition: $_closeAnimationPosition');
         _closeAnimation.apply(_closeAnimationTimeToApply, artboard, 1.0);
         _previousTimeToApply = _closeAnimationTimeToApply;
       }
@@ -87,15 +95,15 @@ class SwipeAdvanceController extends FlareControls {
     return true;
   }
 
-  void play(String animationName) {
+  void play(String name, {double mix = 1.0, double mixSeconds = 0.2}) {
     _playNormalAnimation = true;
-    super.play(animationName);
+    super.play(name);
   }
 
   @override
   void onCompleted(String name) {
     _playNormalAnimation = false;
-    if(name == _closeAnimationName) {
+    if (name == _closeAnimationName) {
       _updateAnimationPositionToBeginning();
     }
     super.onCompleted(name);
@@ -123,7 +131,7 @@ class SwipeAdvanceController extends FlareControls {
   }
 
   void _reverseOpenAnimation(double elapsed) {
-    print('_reverseOpenAnimation');
+    // print('_reverseOpenAnimation');
     // If the animation has not ended and we haven't reached the threshold yet
     var reverseAnimation =
         _currentAnimationOrigin == _AnimationOrigin.Beginning;
@@ -151,8 +159,8 @@ class SwipeAdvanceController extends FlareControls {
     animationAtEnd = true;
     _thresholdReached = false;
 
-    print(
-        'Animation@end REVERSE: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
+    // print(
+    //     'Animation@end REVERSE: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
   }
 
   void _handleCloseAnimationReverseComplete() {
@@ -162,8 +170,8 @@ class SwipeAdvanceController extends FlareControls {
     animationAtEnd = true;
     _thresholdReached = false;
 
-    print(
-        'CLOSING Animation@end REVERSE: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
+    // print(
+    //     'CLOSING Animation@end REVERSE: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
   }
 
   void _updateAnimationForNoCloseAnimationSupplied(double elapsed) {
@@ -196,8 +204,8 @@ class SwipeAdvanceController extends FlareControls {
         _thresholdReached = false;
         // Make sure the position for the closeAnimation is at the beginning.
         _closeAnimationPosition = 0;
-        print(
-            'Animation@end FORWARD: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
+        // print(
+        //     'Animation@end FORWARD: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
       }
     }
   }
@@ -210,30 +218,29 @@ class SwipeAdvanceController extends FlareControls {
       // When we get to the end of the animation we want to indicate that and set some values.
       // Here we prapare for the swipe back
       if (!animationAtEnd) {
-       
         _updateAnimationPositionToBeginning();
 
         animationAtEnd = true;
         _thresholdReached = false;
-        print(
-            'CLOSING Animation@end FORWARD: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
+        // print(
+        //     'CLOSING Animation@end FORWARD: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
       }
     }
   }
 
   void _updateAnimationPositionToBeginning() {
-     // Set back to beginning when we complete the animation
-        _currentAnimationOrigin = _AnimationOrigin.Beginning;
-        // We want our delta Since interaction to reflect the same
-        _deltaXSinceInteraction = 0;
-        // Reset the open animation position since the first frame of the open
-        // animation equals the last frame of the close animation
-        _openAnimationPosition = 0;
+    // Set back to beginning when we complete the animation
+    _currentAnimationOrigin = _AnimationOrigin.Beginning;
+    // We want our delta Since interaction to reflect the same
+    _deltaXSinceInteraction = 0;
+    // Reset the open animation position since the first frame of the open
+    // animation equals the last frame of the close animation
+    _openAnimationPosition = 0;
   }
 
   void _reverseCloseAnimation(double elapsed) {
     // If the animation has not ended and we haven't reached the threshold yet
-    print('_reverseCloseAnimation');
+    // print('_reverseCloseAnimation');
     var reverseValue = (elapsed * _speed) % _closeAnimation.duration;
     if (_closeAnimationPosition > 0) {
       _closeAnimationPosition -= reverseValue;
@@ -301,8 +308,8 @@ class SwipeAdvanceController extends FlareControls {
       _closeAnimationPosition = 1.0 - (_deltaXSinceInteraction / width);
     }
 
-    print(
-        'CLOSE SWIPE: closeAnimationPosition: $_closeAnimationPosition, _thresholdReached: $_thresholdReached, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX: $deltaX');
+    // print(
+    //     'CLOSE SWIPE: closeAnimationPosition: $_closeAnimationPosition, _thresholdReached: $_thresholdReached, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX: $deltaX');
   }
 
   void _updateSwipeForSingleOpenAnimation(Offset touchDelta) {
@@ -335,8 +342,8 @@ class SwipeAdvanceController extends FlareControls {
       _openAnimationPosition = 1.0 - (_deltaXSinceInteraction / width);
     }
 
-    print(
-        'OPEN SWIPE: animationPosition: $_openAnimationPosition, _thresholdReached: $_thresholdReached, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX: $deltaX');
+    // print(
+    //     'OPEN SWIPE: animationPosition: $_openAnimationPosition, _thresholdReached: $_thresholdReached, _deltaXSinceInteraction: $_deltaXSinceInteraction, deltaX: $deltaX');
   }
 
   void interactionStarted() {
