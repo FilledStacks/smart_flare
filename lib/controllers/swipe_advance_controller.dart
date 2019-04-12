@@ -15,6 +15,7 @@ class SwipeAdvanceController extends FlareControls {
   ActorAdvancingDirection _direction;
   final bool reverseOnRelease;
   double swipeThreshold;
+  final bool completeOnThresholdReached;
 
   _AnimationOrigin _currentAnimationOrigin = _AnimationOrigin.Beginning;
 
@@ -35,6 +36,7 @@ class SwipeAdvanceController extends FlareControls {
       @required String openAnimationName,
       @required String closeAnimationName,
       @required ActorAdvancingDirection direction,
+      this.completeOnThresholdReached,
       this.reverseOnRelease,
       this.swipeThreshold})
       : _openAnimationName = openAnimationName,
@@ -127,6 +129,27 @@ class SwipeAdvanceController extends FlareControls {
   void play(String name, {double mix = 1.0, double mixSeconds = 0.2}) {
     _playNormalAnimation = true;
     super.play(name);
+  }
+
+  void updateSwipePosition(Offset touchPosition, Offset touchDelta) {
+    animationAtEnd = false;
+
+    var insideBounds = touchPosition.dx > 0 &&
+        touchPosition.dx < width &&
+        touchPosition.dy > 0;
+
+    if (completeOnThresholdReached && _thresholdReached) {
+      interactionEnded();
+      return;
+    }
+
+    if (insideBounds) {
+      if (!_playCloseAnimation) {
+        _updateSwipeForSingleOpenAnimation(touchDelta);
+      } else {
+        _updateSwipeForClosingAnimation(touchDelta);
+      }
+    }
   }
 
   void _advanceClosingAnimation(double elapsed) {
@@ -266,22 +289,6 @@ class SwipeAdvanceController extends FlareControls {
       _closeAnimationPosition -= reverseValue;
     } else {
       _handleCloseAnimationReverseComplete();
-    }
-  }
-
-  void updateSwipePosition(Offset touchPosition, Offset touchDelta) {
-    animationAtEnd = false;
-
-    var insideBounds = touchPosition.dx > 0 &&
-        touchPosition.dx < width &&
-        touchPosition.dy > 0;
-
-    if (insideBounds) {
-      if (!_playCloseAnimation) {
-        _updateSwipeForSingleOpenAnimation(touchDelta);
-      } else {
-        _updateSwipeForClosingAnimation(touchDelta);
-      }
     }
   }
 

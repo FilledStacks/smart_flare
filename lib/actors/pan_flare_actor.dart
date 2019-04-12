@@ -23,13 +23,16 @@ class PanFlareActor extends StatefulWidget {
   /// If none is supplied the open animation will be reversed
   final String closeAnimation;
 
-  /// The threshold for animation to complete when gesture is finished. If < 0 it's taken as percentage else pixels.
+  /// The threshold for animation to complete when gesture is finished. If < 1 it's taken as percentage else number of logical pixels.
   ///
   /// When this threshold is passed and the pan/drag gesture ends the animation will play until it's complete
   final double threshold;
 
   /// When true the animation will reverse on the release of the gesture if threshold is not reached.
   final bool reverseOnRelease;
+
+  /// When true the animation will play to completion as soon as the threshold is reached
+  final bool completeOnThresholdReached;
 
   final List<ActiveArea> activeAreas;
 
@@ -42,6 +45,7 @@ class PanFlareActor extends StatefulWidget {
       this.activeAreas,
       this.closeAnimation,
       this.threshold,
+      this.completeOnThresholdReached = false,
       this.reverseOnRelease = true});
 
   @override
@@ -60,7 +64,8 @@ class _PanFlareActorState extends State<PanFlareActor> {
           direction: widget.direction,
           reverseOnRelease: widget.reverseOnRelease,
           swipeThreshold: widget.threshold,
-          closeAnimationName: widget.closeAnimation);
+          closeAnimationName: widget.closeAnimation,
+          completeOnThresholdReached: widget.completeOnThresholdReached);
     }
     super.initState();
   }

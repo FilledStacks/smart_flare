@@ -18,8 +18,9 @@ class PanActorDemo extends StatelessWidget {
           openAnimation: 'open',
           closeAnimation: 'close',
           direction: ActorAdvancingDirection.RightToLeft,
-          threshold: 40.0,
+          threshold: 20.0,
           reverseOnRelease: true,
+          completeOnThresholdReached: true,
           activeAreas: [
             RelativePanArea(
               area: Rect.fromLTWH(0, 0.7, 1.0, 0.3),
