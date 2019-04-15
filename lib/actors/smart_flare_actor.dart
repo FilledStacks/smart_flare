@@ -21,7 +21,7 @@ class SmartFlareActor extends StatefulWidget {
 
   final List<ActiveArea> activeAreas;
 
-  FlareController controller;
+  FlareController _controller;
 
   SmartFlareActor(
       {@required this.width,
@@ -29,25 +29,28 @@ class SmartFlareActor extends StatefulWidget {
       @required this.filename,
       this.startingAnimation,
       this.activeAreas,
-      this.controller}) {
-    if (controller == null) {
-      controller = FlareControls();
-    } else {
+      FlareController controller})
+      : _controller = controller {
+    if (_controller != null) {
       var hasPanAreaIfSwipeControllerSupplied =
-          controller is SwipeAdvanceController &&
+          _controller is SwipeAdvanceController &&
               activeAreas.firstWhere((area) => area is RelativePanArea) != null;
       assert(hasPanAreaIfSwipeControllerSupplied,
           'A RelativePanArea has to be supplied when using the SwipeAdvanceController');
     }
   }
 
-  _SmartFlareActorState createState() => _SmartFlareActorState();
+  _SmartFlareActorState createState() =>
+      _SmartFlareActorState(controller: _controller);
 }
 
 class _SmartFlareActorState extends State<SmartFlareActor> {
   String _lastPlayedAnimation;
 
-  List<Widget> interactableWidgets;
+  FlareController _controller;
+
+  _SmartFlareActorState({FlareController controller})
+      : _controller = controller;
 
   @override
   Widget build(BuildContext context) {
@@ -55,13 +58,17 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
       print('SmartFlare:Warning: - No starting animation supplied');
     }
 
-    interactableWidgets = List<Widget>();
+    if (_controller == null) {
+      _controller = FlareControls();
+    }
+
+    var interactableWidgets = List<Widget>();
     interactableWidgets.add(Container(
       width: widget.width,
       height: widget.height,
       child: FlareActor(
         widget.filename,
-        controller: widget.controller,
+        controller: _controller,
         animation: widget.startingAnimation,
       ),
     ));
@@ -115,12 +122,11 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
       return;
     }
 
-    if(widget.controller is SwipeAdvanceController) {
-      (widget.controller as SwipeAdvanceController).play(animationToPlay);
+    if (_controller is SwipeAdvanceController) {
+      (_controller as SwipeAdvanceController).play(animationToPlay);
     } else {
-      (widget.controller as FlareControls).play(animationToPlay);
+      (_controller as FlareControls).play(animationToPlay);
     }
-    
 
     _lastPlayedAnimation = animationToPlay;
   }
@@ -141,22 +147,24 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
   Widget _getPanArea(ActiveArea activeArea, double width, double height) {
     return GestureDetector(
         onHorizontalDragStart: (tapInfo) {
-          (widget.controller as SwipeAdvanceController).interactionStarted();
+          (_controller as SwipeAdvanceController).interactionStarted();
         },
         onHorizontalDragUpdate: (tapInfo) {
           var localPosition = (context.findRenderObject() as RenderBox)
               .globalToLocal(tapInfo.globalPosition);
-          (widget.controller as SwipeAdvanceController)
+          (_controller as SwipeAdvanceController)
               .updateSwipePosition(localPosition, tapInfo.delta);
         },
         onHorizontalDragEnd: (tapInfo) {
-          (widget.controller as SwipeAdvanceController).interactionEnded();
+          (_controller as SwipeAdvanceController).interactionEnded();
         },
-        child: _activeAreaRepresentation(activeArea, width, height, borderColor: Colors.red));
+        child: _activeAreaRepresentation(activeArea, width, height,
+            borderColor: Colors.red));
   }
 
   Widget _activeAreaRepresentation(
-      ActiveArea activeArea, double width, double height, {Color borderColor = Colors.blue}) {
+      ActiveArea activeArea, double width, double height,
+      {Color borderColor = Colors.blue}) {
     return Container(
         width: width,
         height: height,
