@@ -51,7 +51,11 @@ class ActiveArea {
         'Use either animationsToCycle or animationName but not both');
   }
 
+  @Deprecated('Prefer using [hasAnimationGuard] for better naming')
   bool get hasRequiredAnimation => guardComingFrom != null;
+  bool get hasAnimationGuard => guardComingFrom != null;
+
+  bool get hasCycleAnimations => animationsToCycle != null && animationsToCycle.length > 1;
 
   String getNextAnimation() {
     _nextAnimationIndex++;
