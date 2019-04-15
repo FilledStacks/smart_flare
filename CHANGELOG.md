@@ -27,3 +27,8 @@ Fixed Some weird overriding crash for flare controls play function.
 
 - Added completeOnThresholdReached to PanFlareActor to indicate that we want the animation to play until completion once we reach the defined threshold
 - Made sure the animation always starts of at the correct place when the actor is shown for the first time. 
+
+## [0.2.6] - 2019-04-15
+
+- Added playStartingAnimationWhenRebuilt to SmartFlareActor to control if the starting animation is played coming back from a navigation
+- Added a new TapController to better manage the last played animations, specifically for active areas with a list of cycle animations.

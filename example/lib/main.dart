@@ -1,3 +1,5 @@
+import 'package:flare_tutorial/navigation_demo.dart';
+
 import './pan_actor_demo.dart';
 import 'package:flutter/material.dart';
 
@@ -12,6 +14,6 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: PanActorDemo());
+        home: NavigationDemo());
   }
 }
