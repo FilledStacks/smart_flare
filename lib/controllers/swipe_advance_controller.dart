@@ -126,9 +126,9 @@ class SwipeAdvanceController extends FlareControls {
     super.onCompleted(name);
   }
 
-  void play(String name, {double mix = 1.0, double mixSeconds = 0.2}) {
+  void playAnimation(String animationName) {
     _playNormalAnimation = true;
-    super.play(name);
+    play(animationName);
   }
 
   void updateSwipePosition(Offset touchPosition, Offset touchDelta) {

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:smart_flare/controllers/swipe_advance_controller.dart';
+import 'package:smart_flare/controllers/tap_controller.dart';
+import 'package:smart_flare/reducers.dart';
 import '../models.dart';
 
 /// A wrapper to the FlareActor that provides additional user input functionality.
@@ -21,6 +23,11 @@ class SmartFlareActor extends StatefulWidget {
 
   final List<ActiveArea> activeAreas;
 
+  /// When true the starting animation will be played on actions that rebuild the widget
+  /// 
+  /// Set to true when you want the starting animation to play whenever you navigate back to a view
+  final bool playStartingAnimationWhenRebuilt;
+
   FlareController _controller;
 
   SmartFlareActor(
@@ -28,6 +35,7 @@ class SmartFlareActor extends StatefulWidget {
       @required this.height,
       @required this.filename,
       this.startingAnimation,
+      this.playStartingAnimationWhenRebuilt = false,
       this.activeAreas,
       FlareController controller})
       : _controller = controller {
@@ -45,8 +53,6 @@ class SmartFlareActor extends StatefulWidget {
 }
 
 class _SmartFlareActorState extends State<SmartFlareActor> {
-  String _lastPlayedAnimation;
-
   FlareController _controller;
 
   _SmartFlareActorState({FlareController controller})
@@ -59,7 +65,11 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
     }
 
     if (_controller == null) {
-      _controller = FlareControls();
+      _controller = TapController();
+    }
+
+    if(widget.startingAnimation != null && widget.playStartingAnimationWhenRebuilt) {
+      (_controller as TapController).playAnimation(ActiveArea(animationName: widget.startingAnimation, area: Rect.fromLTRB(0, 0, 1, 1)));
     }
 
     var interactableWidgets = List<Widget>();
@@ -107,28 +117,13 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
   }
 
   void playAnimation(ActiveArea activeArea) {
-    String animationToPlay;
-
-    if (activeArea.animationName != null) {
-      animationToPlay = activeArea.animationName;
-    } else if (activeArea.animationsToCycle != null) {
-      animationToPlay = activeArea.getNextAnimation();
-    }
-
-    if (activeArea.hasRequiredAnimation &&
-        activeArea.guardComingFrom.contains(_lastPlayedAnimation)) {
-      print(
-          'SmartFlare:Info - Last played animation is $_lastPlayedAnimation and $animationToPlay has a guard against it');
-      return;
-    }
+    var animationToPlay = getAnimationToPlay(activeArea);
 
     if (_controller is SwipeAdvanceController) {
-      (_controller as SwipeAdvanceController).play(animationToPlay);
+      (_controller as SwipeAdvanceController).playAnimation(animationToPlay);
     } else {
-      (_controller as FlareControls).play(animationToPlay);
+      (_controller as TapController).playAnimation(activeArea);
     }
-
-    _lastPlayedAnimation = animationToPlay;
   }
 
   Widget _getTappableArea(ActiveArea activeArea, double width, double height) {
