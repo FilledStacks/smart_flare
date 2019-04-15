@@ -1,5 +1,5 @@
-import 'package:flare_tutorial/flare_demo.dart';
-import 'package:flare_tutorial/pan_actor_demo.dart';
+import './flare_demo.dart';
+import './pan_actor_demo.dart';
 import 'package:flutter/material.dart';
 import 'package:smart_flare/actors/smart_flare_actor.dart';
 import 'package:smart_flare/models.dart';
