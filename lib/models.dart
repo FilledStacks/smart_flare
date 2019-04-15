@@ -49,11 +49,6 @@ class ActiveArea {
         this.animationName != null && this.animationsToCycle != null;
     assert(!hasAnimationsToCycleAndAnimationName,
         'Use either animationsToCycle or animationName but not both');
-
-    if (animationsToCycle == null) {
-      print(
-          'SmartFlare:Warning - If you are cycling through animations there\'s a high chance that you might need to set the animationRequired property on the Active area.');
-    }
   }
 
   bool get hasRequiredAnimation => guardComingFrom != null;
