@@ -164,10 +164,10 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
         width: width,
         height: height,
         decoration: BoxDecoration(
-            color: activeArea.debugArea
+            color: (activeArea.debugArea??false)
                 ? Color.fromARGB(80, 256, 0, 0)
                 : Colors.transparent,
-            border: activeArea.debugArea
+            border: (activeArea.debugArea??false)
                 ? Border.all(color: borderColor, width: 1.0)
                 : null));
   }
