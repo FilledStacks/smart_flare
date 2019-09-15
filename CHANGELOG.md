@@ -32,3 +32,7 @@ Fixed Some weird overriding crash for flare controls play function.
 
 - Added playStartingAnimationWhenRebuilt to SmartFlareActor to control if the starting animation is played coming back from a navigation
 - Added a new TapController to better manage the last played animations, specifically for active areas with a list of cycle animations.
+
+## [0.2.7] - 2019-09-15
+
+- Update the flare_flutter package version to fix [build issue](https://github.com/FilledStacks/smart_flare/issues/7).
