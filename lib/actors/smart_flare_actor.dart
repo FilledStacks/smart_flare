@@ -24,7 +24,7 @@ class SmartFlareActor extends StatefulWidget {
   final List<ActiveArea> activeAreas;
 
   /// When true the starting animation will be played on actions that rebuild the widget
-  /// 
+  ///
   /// Set to true when you want the starting animation to play whenever you navigate back to a view
   final bool playStartingAnimationWhenRebuilt;
 
@@ -68,8 +68,11 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
       _controller = TapController();
     }
 
-    if(widget.startingAnimation != null && widget.playStartingAnimationWhenRebuilt) {
-      (_controller as TapController).playAnimation(ActiveArea(animationName: widget.startingAnimation, area: Rect.fromLTRB(0, 0, 1, 1)));
+    if (widget.startingAnimation != null &&
+        widget.playStartingAnimationWhenRebuilt) {
+      (_controller as TapController).playAnimation(ActiveArea(
+          animationName: widget.startingAnimation,
+          area: Rect.fromLTRB(0, 0, 1, 1)));
     }
 
     var interactableWidgets = List<Widget>();
@@ -130,6 +133,25 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
     return GestureDetector(
       onTap: () {
         playAnimation(activeArea);
+        if (activeArea.hasAnimationGuard) {
+          if (_controller != null) {
+            if (_controller is TapController) {
+              if ((_controller as TapController).lastPlayedAnimation != null) {
+                if (activeArea.guardComingFrom.contains(
+                    (_controller as TapController).lastPlayedAnimation)) {
+                  return;
+                }
+              }
+              if ((_controller as TapController).lastPlayedCycleAnimation !=
+                  null) {
+                if (activeArea.guardComingFrom.contains(
+                    (_controller as TapController).lastPlayedCycleAnimation)) {
+                  return;
+                }
+              }
+            }
+          }
+        }
 
         if (activeArea.onAreaTapped != null) {
           activeArea.onAreaTapped();
