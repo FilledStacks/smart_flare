@@ -4,7 +4,7 @@ Interactive capabilities for larger Flare animations.
 
 ## Installation
 
-Add smart_slare as dependency to your pubspec file.
+Add smart_flare as dependency to your pubspec file.
 
 ```
 smart_flare: any
@@ -120,7 +120,7 @@ ActiveArea(
 
 And that's it!
 
-### Specialised Actors
+### Specialized Actors
 
 #### CycleFlareActor
 
@@ -137,7 +137,7 @@ CycleFlareActor(
 
 #### PanFlareActor
 
-Given an open and close animation this actor will play those animations when panned accross it. It plays the open animation in the `direction` supplied. If no close animation is provided the open animation will be reversed when swiping in the "closing" direction.
+Given an open and close animation this actor will play those animations when panned across it. It plays the open animation in the `direction` supplied. If no close animation is provided the open animation will be reversed when swiping in the "closing" direction.
 
 _Currently only supports horizontal panning. Vertical panning on the way._
 
@@ -164,7 +164,7 @@ PanFlareActor(
 
 **reverseOnRelease** (optional. Default true): Tells the actor to reverse the animation when the user stops interacting with the actor and the threshold is not reached.
 
-**activeAreas** (required): You have to supply atleast one relative pan area
+**activeAreas** (required): You have to supply at least one relative pan area
 
 ## Contribution
 
