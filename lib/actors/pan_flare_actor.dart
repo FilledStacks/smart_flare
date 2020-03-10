@@ -15,6 +15,9 @@ class PanFlareActor extends StatefulWidget {
   /// Full path to the animation file
   final String filename;
 
+  // Color of the asset, defalut - null
+  final Color color;
+
   /// The name of the animation that has to be played while advancing
   final String openAnimation;
 
@@ -41,6 +44,7 @@ class PanFlareActor extends StatefulWidget {
       @required this.height,
       @required this.filename,
       @required this.openAnimation,
+      this.color,
       this.direction = ActorAdvancingDirection.LeftToRight,
       this.activeAreas,
       this.closeAnimation,
@@ -78,6 +82,7 @@ class _PanFlareActorState extends State<PanFlareActor> {
       filename: widget.filename,
       controller: swipeController,
       activeAreas: widget.activeAreas,
+      color: widget.color,
     );
   }
 }

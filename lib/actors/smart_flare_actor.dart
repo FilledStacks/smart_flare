@@ -17,6 +17,7 @@ class SmartFlareActor extends StatefulWidget {
 
   /// Thefile path to the flare animation
   final String filename;
+  final Color color;
 
   /// Animation that the Flare actor will start off playing
   final String startingAnimation;
@@ -34,6 +35,7 @@ class SmartFlareActor extends StatefulWidget {
       {@required this.width,
       @required this.height,
       @required this.filename,
+      this.color,
       this.startingAnimation,
       this.playStartingAnimationWhenRebuilt = false,
       this.activeAreas,
@@ -79,11 +81,10 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
     interactableWidgets.add(Container(
       width: widget.width,
       height: widget.height,
-      child: FlareActor(
-        widget.filename,
-        controller: _controller,
-        animation: widget.startingAnimation,
-      ),
+      child: FlareActor(widget.filename,
+          controller: _controller,
+          animation: widget.startingAnimation,
+          color: widget.color),
     ));
 
     if (widget.activeAreas != null) {
@@ -186,10 +187,10 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
         width: width,
         height: height,
         decoration: BoxDecoration(
-            color: (activeArea.debugArea??false)
+            color: (activeArea.debugArea ?? false)
                 ? Color.fromARGB(80, 256, 0, 0)
                 : Colors.transparent,
-            border: (activeArea.debugArea??false)
+            border: (activeArea.debugArea ?? false)
                 ? Border.all(color: borderColor, width: 1.0)
                 : null));
   }
