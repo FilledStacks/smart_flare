@@ -1,7 +1,7 @@
 name: smart_flare
 description: A package that helps with larger flare animations and interactions.
-version: 0.2.7
-author: Dane Mackier <dane.mackier@outlook.com>
+version: 0.2.8
+author: Dane Mackier <dane@filledstacks.com>
 homepage: https://github.com/FilledStacks/smart_flare
 
 environment:
@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   # flare is required since this package is based on flare
-  flare_flutter: ^1.5.8
+  flare_flutter: ^2.0.1
 
 dev_dependencies:
   flutter_test:
