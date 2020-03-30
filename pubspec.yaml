@@ -1,7 +1,6 @@
 name: smart_flare
 description: A package that helps with larger flare animations and interactions.
 version: 0.2.8
-author: Dane Mackier <dane@filledstacks.com>
 homepage: https://github.com/FilledStacks/smart_flare
 
 environment:
