@@ -37,4 +37,4 @@ Fixed Some weird overriding crash for flare controls play function.
 
 - Update the flare_flutter package version to fix [build issue](https://github.com/FilledStacks/smart_flare/issues/7).
 
-## [0.2.8] - 2020-03-30 - Update flare_flutter to 2.0.1
+## [0.2.9] - 2020-03-30 - Update flare_flutter to 2.0.1
