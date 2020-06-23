@@ -12,7 +12,7 @@ smart_flare: any
 
 ## Example
 
-Here is [an example](https://youtu.be/4PgdFYcQpuc) of how to use the functionality within this project.
+Here is [an example](https://youtu.be/fZuLh-oc5Ao) of how to use the functionality within this project.
 
 ## Usage
 
