@@ -11,12 +11,16 @@ class CycleFlareActor extends StatefulWidget {
   final double width;
   final double height;
 
+  /// The name of the artboard to display.
+  final String artboard;
+
   CycleFlareActor(
       {Key key,
       @required this.width,
       @required this.height,
       @required this.filename,
       @required this.animations,
+      this.artboard,
       this.startingAnimationindex = 0,
       this.callback})
       : super(key: key) {
