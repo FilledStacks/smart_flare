@@ -1,3 +1,7 @@
+## 0.2.10
+
+- Adds 'artboard' support
+
 ## 0.2.9+1
 
 - Change log style updates
