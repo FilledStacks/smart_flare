@@ -18,6 +18,8 @@ class SmartFlareActor extends StatefulWidget {
   /// Thefile path to the flare animation
   final String filename;
 
+  final Color color;
+
   /// The name of the artboard to display.
   final String artboard;
 
@@ -37,6 +39,7 @@ class SmartFlareActor extends StatefulWidget {
       {@required this.width,
       @required this.height,
       @required this.filename,
+      this.color,
       this.artboard,
       this.startingAnimation,
       this.playStartingAnimationWhenRebuilt = false,
@@ -88,6 +91,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
         artboard: widget.artboard,
         controller: _controller,
         animation: widget.startingAnimation,
+        color: widget.color,
       ),
     ));
 
