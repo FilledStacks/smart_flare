@@ -1,10 +1,9 @@
 import 'package:flare_flutter/flare_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flare_flutter/flare_actor.dart';
-import 'package:flare_flutter/flare_controls.dart';
-import 'package:smart_flare/controllers/swipe_advance_controller.dart';
-import 'package:smart_flare/controllers/tap_controller.dart';
-import 'package:smart_flare/reducers.dart';
+import '../controllers/swipe_advance_controller.dart';
+import '../controllers/tap_controller.dart';
+import '../reducers.dart';
 import '../models.dart';
 
 /// A wrapper to the FlareActor that provides additional user input functionality.

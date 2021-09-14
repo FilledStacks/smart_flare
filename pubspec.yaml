@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   # flare is required since this package is based on flare
-  flare_flutter: ^2.0.1
+  flare_flutter: ^3.0.2
 
 dev_dependencies:
   flutter_test:

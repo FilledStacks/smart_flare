@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:smart_flare/actors/smart_flare_actor.dart';
-import 'package:smart_flare/controllers/swipe_advance_controller.dart';
+import '../actors/smart_flare_actor.dart';
+import '../controllers/swipe_advance_controller.dart';
 
 import '../enums.dart';
 import '../models.dart';
