@@ -7,19 +7,19 @@ class CycleFlareActor extends StatefulWidget {
   final String filename;
   final List<String> animations;
   final int startingAnimationindex;
-  final Function(String) callback;
+  final Function(String)? callback;
   final double width;
   final double height;
 
   /// The name of the artboard to display.
-  final String artboard;
+  final String? artboard;
 
   CycleFlareActor(
-      {Key key,
-      @required this.width,
-      @required this.height,
-      @required this.filename,
-      @required this.animations,
+      {Key? key,
+      required this.width,
+      required this.height,
+      required this.filename,
+      required this.animations,
       this.artboard,
       this.startingAnimationindex = 0,
       this.callback})
@@ -33,7 +33,7 @@ class CycleFlareActor extends StatefulWidget {
 }
 
 class _CycleFlareActorState extends State<CycleFlareActor> {
-  int animationIndex;
+  late int animationIndex;
 
   @override
   void initState() {

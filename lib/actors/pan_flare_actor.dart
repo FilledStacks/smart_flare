@@ -16,7 +16,7 @@ class PanFlareActor extends StatefulWidget {
   final String filename;
 
   /// The name of the artboard to display.
-  final String artboard;
+  final String? artboard;
 
   /// The name of the animation that has to be played while advancing
   final String openAnimation;
@@ -24,12 +24,12 @@ class PanFlareActor extends StatefulWidget {
   /// The animation that has to be played when going back from advanced position
   ///
   /// If none is supplied the open animation will be reversed
-  final String closeAnimation;
+  final String? closeAnimation;
 
   /// The threshold for animation to complete when gesture is finished. If < 1 it's taken as percentage else number of logical pixels.
   ///
   /// When this threshold is passed and the pan/drag gesture ends the animation will play until it's complete
-  final double threshold;
+  final double? threshold;
 
   /// When true the animation will reverse on the release of the gesture if threshold is not reached.
   final bool reverseOnRelease;
@@ -37,13 +37,13 @@ class PanFlareActor extends StatefulWidget {
   /// When true the animation will play to completion as soon as the threshold is reached
   final bool completeOnThresholdReached;
 
-  final List<ActiveArea> activeAreas;
+  final List<ActiveArea>? activeAreas;
 
   const PanFlareActor(
-      {@required this.width,
-      @required this.height,
-      @required this.filename,
-      @required this.openAnimation,
+      {required this.width,
+      required this.height,
+      required this.filename,
+      required this.openAnimation,
       this.direction = ActorAdvancingDirection.LeftToRight,
       this.artboard,
       this.activeAreas,
@@ -57,7 +57,7 @@ class PanFlareActor extends StatefulWidget {
 }
 
 class _PanFlareActorState extends State<PanFlareActor> {
-  SwipeAdvanceController swipeController;
+  SwipeAdvanceController? swipeController;
 
   @override
   void initState() {

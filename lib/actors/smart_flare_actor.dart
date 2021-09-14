@@ -18,34 +18,34 @@ class SmartFlareActor extends StatefulWidget {
   final String filename;
 
   /// The name of the artboard to display.
-  final String artboard;
+  final String? artboard;
 
   /// Animation that the Flare actor will start off playing
-  final String startingAnimation;
+  final String? startingAnimation;
 
-  final List<ActiveArea> activeAreas;
+  final List<ActiveArea>? activeAreas;
 
   /// When true the starting animation will be played on actions that rebuild the widget
   ///
   /// Set to true when you want the starting animation to play whenever you navigate back to a view
   final bool playStartingAnimationWhenRebuilt;
 
-  FlareController _controller;
+  FlareController? _controller;
 
   SmartFlareActor(
-      {@required this.width,
-      @required this.height,
-      @required this.filename,
+      {required this.width,
+      required this.height,
+      required this.filename,
       this.artboard,
       this.startingAnimation,
       this.playStartingAnimationWhenRebuilt = false,
       this.activeAreas,
-      FlareController controller})
+      FlareController? controller})
       : _controller = controller {
     if (_controller != null) {
-      var hasPanAreaIfSwipeControllerSupplied =
-          _controller is SwipeAdvanceController &&
-              activeAreas.firstWhere((area) => area is RelativePanArea) != null;
+      var hasPanAreaIfSwipeControllerSupplied = _controller
+              is SwipeAdvanceController &&
+          activeAreas!.firstWhere((area) => area is RelativePanArea) != null;
       assert(hasPanAreaIfSwipeControllerSupplied,
           'A RelativePanArea has to be supplied when using the SwipeAdvanceController');
     }
@@ -56,9 +56,9 @@ class SmartFlareActor extends StatefulWidget {
 }
 
 class _SmartFlareActorState extends State<SmartFlareActor> {
-  FlareController _controller;
+  FlareController? _controller;
 
-  _SmartFlareActorState({FlareController controller})
+  _SmartFlareActorState({FlareController? controller})
       : _controller = controller;
 
   @override
@@ -78,7 +78,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
           area: Rect.fromLTRB(0, 0, 1, 1)));
     }
 
-    var interactableWidgets = List<Widget>();
+    var interactableWidgets = List<Widget>.empty();
     interactableWidgets.add(Container(
       width: widget.width,
       height: widget.height,
@@ -91,7 +91,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
     ));
 
     if (widget.activeAreas != null) {
-      var interactiveAreas = widget.activeAreas.map((activeArea) {
+      var interactiveAreas = widget.activeAreas!.map((activeArea) {
         var isRelativeArea = activeArea is RelativeActiveArea;
 
         var top = isRelativeArea
@@ -127,7 +127,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
     var animationToPlay = getAnimationToPlay(activeArea);
 
     if (_controller is SwipeAdvanceController) {
-      (_controller as SwipeAdvanceController).playAnimation(animationToPlay);
+      (_controller as SwipeAdvanceController).playAnimation(animationToPlay!);
     } else {
       (_controller as TapController).playAnimation(activeArea);
     }
@@ -141,14 +141,14 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
           if (_controller != null) {
             if (_controller is TapController) {
               if ((_controller as TapController).lastPlayedAnimation != null) {
-                if (activeArea.guardComingFrom.contains(
+                if (activeArea.guardComingFrom!.contains(
                     (_controller as TapController).lastPlayedAnimation)) {
                   return;
                 }
               }
               if ((_controller as TapController).lastPlayedCycleAnimation !=
                   null) {
-                if (activeArea.guardComingFrom.contains(
+                if (activeArea.guardComingFrom!.contains(
                     (_controller as TapController).lastPlayedCycleAnimation)) {
                   return;
                 }
@@ -158,7 +158,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
         }
 
         if (activeArea.onAreaTapped != null) {
-          activeArea.onAreaTapped();
+          activeArea.onAreaTapped!();
         }
       },
       child: _activeAreaRepresentation(activeArea, width, height),
