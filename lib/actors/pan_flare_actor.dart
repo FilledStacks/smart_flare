@@ -24,7 +24,7 @@ class PanFlareActor extends StatefulWidget {
   /// The animation that has to be played when going back from advanced position
   ///
   /// If none is supplied the open animation will be reversed
-  final String? closeAnimation;
+  final String closeAnimation;
 
   /// The threshold for animation to complete when gesture is finished. If < 1 it's taken as percentage else number of logical pixels.
   ///
@@ -44,10 +44,10 @@ class PanFlareActor extends StatefulWidget {
       required this.height,
       required this.filename,
       required this.openAnimation,
+      required this.closeAnimation,
       this.direction = ActorAdvancingDirection.LeftToRight,
       this.artboard,
       this.activeAreas,
-      this.closeAnimation,
       this.threshold,
       this.completeOnThresholdReached = false,
       this.reverseOnRelease = true});
