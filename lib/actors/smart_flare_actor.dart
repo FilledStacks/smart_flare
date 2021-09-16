@@ -22,6 +22,10 @@ class SmartFlareActor extends StatefulWidget {
   /// The name of the artboard to display.
   final String? artboard;
 
+  /// The BoxFit strategy used to scale the Flare content into the
+  /// bounds of this widget.
+  final BoxFit? fit;
+
   /// Animation that the Flare actor will start off playing
   final String? startingAnimation;
 
@@ -40,6 +44,7 @@ class SmartFlareActor extends StatefulWidget {
       required this.filename,
       this.color,
       this.artboard,
+      this.fit,
       this.startingAnimation,
       this.playStartingAnimationWhenRebuilt = false,
       this.activeAreas,
@@ -88,6 +93,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
       child: FlareActor(
         widget.filename,
         artboard: widget.artboard,
+        fit: widget.fit ?? BoxFit.contain,
         controller: _controller,
         animation: widget.startingAnimation,
         color: widget.color,

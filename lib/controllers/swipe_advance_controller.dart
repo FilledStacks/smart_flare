@@ -12,6 +12,7 @@ class SwipeAdvanceController extends FlareControls {
   final String? _closeAnimationName;
   ActorAdvancingDirection _direction;
   final bool? reverseOnRelease;
+  final bool uniDirectional;
   double? swipeThreshold;
   final bool? completeOnThresholdReached;
 
@@ -39,6 +40,7 @@ class SwipeAdvanceController extends FlareControls {
       this.callback,
       this.completeOnThresholdReached,
       this.reverseOnRelease,
+      this.uniDirectional = false,
       this.swipeThreshold})
       : _openAnimationName = openAnimationName,
         _closeAnimationName = closeAnimationName,
@@ -68,7 +70,7 @@ class SwipeAdvanceController extends FlareControls {
     }
 
     // Set the starting animation as End
-    _currentAnimationOrigin = _AnimationOrigin.End;
+    if (!uniDirectional) _currentAnimationOrigin = _AnimationOrigin.End;
     // Then indicate the threshold is reached so we can play to the end
     // of the animation (Playing the close animation)
     _thresholdReached = true;

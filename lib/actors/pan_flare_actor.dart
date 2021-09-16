@@ -18,6 +18,10 @@ class PanFlareActor extends StatefulWidget {
   /// The name of the artboard to display.
   final String? artboard;
 
+  /// The BoxFit strategy used to scale the Flare content into the
+  /// bounds of this widget.
+  final BoxFit? fit;
+
   // Color of the asset, defalut - null
   final Color? color;
 
@@ -37,10 +41,14 @@ class PanFlareActor extends StatefulWidget {
   /// When true the animation will reverse on the release of the gesture if threshold is not reached.
   final bool reverseOnRelease;
 
+  final bool uniDirectional;
+
   /// When true the animation will play to completion as soon as the threshold is reached
   final bool completeOnThresholdReached;
 
   final List<ActiveArea>? activeAreas;
+
+  final SwipeAdvanceController? _controller;
 
   const PanFlareActor(
       {required this.width,
@@ -50,18 +58,26 @@ class PanFlareActor extends StatefulWidget {
       required this.closeAnimation,
       this.color,
       this.direction = ActorAdvancingDirection.LeftToRight,
+      this.fit,
       this.artboard,
       this.activeAreas,
       this.threshold,
+      this.uniDirectional = false,
       this.completeOnThresholdReached = false,
-      this.reverseOnRelease = true});
+      this.reverseOnRelease = true,
+      SwipeAdvanceController? controller})
+      : _controller = controller;
 
   @override
-  _PanFlareActorState createState() => _PanFlareActorState();
+  _PanFlareActorState createState() =>
+      _PanFlareActorState(controller: _controller);
 }
 
 class _PanFlareActorState extends State<PanFlareActor> {
   SwipeAdvanceController? swipeController;
+
+  _PanFlareActorState({SwipeAdvanceController? controller})
+      : swipeController = controller;
 
   @override
   void initState() {
@@ -73,6 +89,7 @@ class _PanFlareActorState extends State<PanFlareActor> {
           reverseOnRelease: widget.reverseOnRelease,
           swipeThreshold: widget.threshold,
           closeAnimationName: widget.closeAnimation,
+          uniDirectional: widget.uniDirectional,
           completeOnThresholdReached: widget.completeOnThresholdReached);
     }
     super.initState();
@@ -85,6 +102,7 @@ class _PanFlareActorState extends State<PanFlareActor> {
       height: widget.height,
       filename: widget.filename,
       artboard: widget.artboard,
+      fit: widget.fit,
       controller: swipeController,
       activeAreas: widget.activeAreas,
       color: widget.color,
