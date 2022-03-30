@@ -86,7 +86,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
           area: Rect.fromLTRB(0, 0, 1, 1)));
     }
 
-    var interactableWidgets = List<Widget>.empty();
+    var interactableWidgets = <Widget>[];
     interactableWidgets.add(Container(
       width: widget.width,
       height: widget.height,
