@@ -1,10 +1,9 @@
 import 'package:flare_flutter/flare_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flare_flutter/flare_actor.dart';
-import 'package:flare_flutter/flare_controls.dart';
-import 'package:smart_flare/controllers/swipe_advance_controller.dart';
-import 'package:smart_flare/controllers/tap_controller.dart';
-import 'package:smart_flare/reducers.dart';
+import '../controllers/swipe_advance_controller.dart';
+import '../controllers/tap_controller.dart';
+import '../reducers.dart';
 import '../models.dart';
 
 /// A wrapper to the FlareActor that provides additional user input functionality.
@@ -18,35 +17,43 @@ class SmartFlareActor extends StatefulWidget {
   /// Thefile path to the flare animation
   final String filename;
 
+  final Color? color;
+
   /// The name of the artboard to display.
-  final String artboard;
+  final String? artboard;
+
+  /// The BoxFit strategy used to scale the Flare content into the
+  /// bounds of this widget.
+  final BoxFit? fit;
 
   /// Animation that the Flare actor will start off playing
-  final String startingAnimation;
+  final String? startingAnimation;
 
-  final List<ActiveArea> activeAreas;
+  final List<ActiveArea>? activeAreas;
 
   /// When true the starting animation will be played on actions that rebuild the widget
   ///
   /// Set to true when you want the starting animation to play whenever you navigate back to a view
   final bool playStartingAnimationWhenRebuilt;
 
-  FlareController _controller;
+  FlareController? _controller;
 
   SmartFlareActor(
-      {@required this.width,
-      @required this.height,
-      @required this.filename,
+      {required this.width,
+      required this.height,
+      required this.filename,
+      this.color,
       this.artboard,
+      this.fit,
       this.startingAnimation,
       this.playStartingAnimationWhenRebuilt = false,
       this.activeAreas,
-      FlareController controller})
+      FlareController? controller})
       : _controller = controller {
     if (_controller != null) {
-      var hasPanAreaIfSwipeControllerSupplied =
-          _controller is SwipeAdvanceController &&
-              activeAreas.firstWhere((area) => area is RelativePanArea) != null;
+      var hasPanAreaIfSwipeControllerSupplied = _controller
+              is SwipeAdvanceController &&
+          activeAreas!.firstWhere((area) => area is RelativePanArea) != null;
       assert(hasPanAreaIfSwipeControllerSupplied,
           'A RelativePanArea has to be supplied when using the SwipeAdvanceController');
     }
@@ -57,9 +64,9 @@ class SmartFlareActor extends StatefulWidget {
 }
 
 class _SmartFlareActorState extends State<SmartFlareActor> {
-  FlareController _controller;
+  FlareController? _controller;
 
-  _SmartFlareActorState({FlareController controller})
+  _SmartFlareActorState({FlareController? controller})
       : _controller = controller;
 
   @override
@@ -79,20 +86,22 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
           area: Rect.fromLTRB(0, 0, 1, 1)));
     }
 
-    var interactableWidgets = List<Widget>();
+    var interactableWidgets = <Widget>[];
     interactableWidgets.add(Container(
       width: widget.width,
       height: widget.height,
       child: FlareActor(
         widget.filename,
         artboard: widget.artboard,
+        fit: widget.fit ?? BoxFit.contain,
         controller: _controller,
         animation: widget.startingAnimation,
+        color: widget.color,
       ),
     ));
 
     if (widget.activeAreas != null) {
-      var interactiveAreas = widget.activeAreas.map((activeArea) {
+      var interactiveAreas = widget.activeAreas!.map((activeArea) {
         var isRelativeArea = activeArea is RelativeActiveArea;
 
         var top = isRelativeArea
@@ -128,7 +137,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
     var animationToPlay = getAnimationToPlay(activeArea);
 
     if (_controller is SwipeAdvanceController) {
-      (_controller as SwipeAdvanceController).playAnimation(animationToPlay);
+      (_controller as SwipeAdvanceController).playAnimation(animationToPlay!);
     } else {
       (_controller as TapController).playAnimation(activeArea);
     }
@@ -142,14 +151,14 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
           if (_controller != null) {
             if (_controller is TapController) {
               if ((_controller as TapController).lastPlayedAnimation != null) {
-                if (activeArea.guardComingFrom.contains(
+                if (activeArea.guardComingFrom!.contains(
                     (_controller as TapController).lastPlayedAnimation)) {
                   return;
                 }
               }
               if ((_controller as TapController).lastPlayedCycleAnimation !=
                   null) {
-                if (activeArea.guardComingFrom.contains(
+                if (activeArea.guardComingFrom!.contains(
                     (_controller as TapController).lastPlayedCycleAnimation)) {
                   return;
                 }
@@ -159,7 +168,7 @@ class _SmartFlareActorState extends State<SmartFlareActor> {
         }
 
         if (activeArea.onAreaTapped != null) {
-          activeArea.onAreaTapped();
+          activeArea.onAreaTapped!();
         }
       },
       child: _activeAreaRepresentation(activeArea, width, height),

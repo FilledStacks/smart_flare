@@ -1,5 +1,3 @@
-import 'package:flare_dart/animation/actor_animation.dart';
-import 'package:flare_dart/math/mat2d.dart';
 import 'package:flare_flutter/flare.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:flutter/material.dart';
@@ -11,16 +9,19 @@ enum _AnimationOrigin { Beginning, End }
 class SwipeAdvanceController extends FlareControls {
   final double width;
   final String _openAnimationName;
-  final String _closeAnimationName;
+  final String? _closeAnimationName;
   ActorAdvancingDirection _direction;
-  final bool reverseOnRelease;
-  double swipeThreshold;
-  final bool completeOnThresholdReached;
+  final bool? reverseOnRelease;
+  final bool uniDirectional;
+  double? swipeThreshold;
+  final bool? completeOnThresholdReached;
+
+  final Function? callback;
 
   _AnimationOrigin _currentAnimationOrigin = _AnimationOrigin.Beginning;
 
-  ActorAnimation _openAnimation;
-  ActorAnimation _closeAnimation;
+  ActorAnimation? _openAnimation;
+  ActorAnimation? _closeAnimation;
   double _speed = 1.0;
   double _previousTimeToApply = 0.0;
   double _deltaXSinceInteraction = 0.0;
@@ -32,12 +33,14 @@ class SwipeAdvanceController extends FlareControls {
   bool _playNormalAnimation = false;
 
   SwipeAdvanceController(
-      {@required this.width,
-      @required String openAnimationName,
-      @required String closeAnimationName,
-      @required ActorAdvancingDirection direction,
+      {required this.width,
+      required String openAnimationName,
+      required String closeAnimationName,
+      required ActorAdvancingDirection direction,
+      this.callback,
       this.completeOnThresholdReached,
       this.reverseOnRelease,
+      this.uniDirectional = false,
       this.swipeThreshold})
       : _openAnimationName = openAnimationName,
         _closeAnimationName = closeAnimationName,
@@ -49,9 +52,9 @@ class SwipeAdvanceController extends FlareControls {
       _hasCloseAnimation && _currentAnimationOrigin == _AnimationOrigin.End;
 
   double get _animationTimeToApply =>
-      _openAnimation.duration * _openAnimationPosition;
+      _openAnimation!.duration * _openAnimationPosition;
   double get _closeAnimationTimeToApply =>
-      _closeAnimation.duration * _closeAnimationPosition;
+      _closeAnimation!.duration * _closeAnimationPosition;
 
   @override
   void initialize(FlutterActorArtboard artboard) {
@@ -59,15 +62,15 @@ class SwipeAdvanceController extends FlareControls {
     _openAnimation = artboard.getAnimation(_openAnimationName);
 
     if (_closeAnimationName != null) {
-      _closeAnimation = artboard.getAnimation(_closeAnimationName);
+      _closeAnimation = artboard.getAnimation(_closeAnimationName!);
     }
 
-    if (swipeThreshold != null && swipeThreshold > 0 && swipeThreshold < 1) {
-      swipeThreshold = width * swipeThreshold;
+    if (swipeThreshold != null && swipeThreshold! > 0 && swipeThreshold! < 1) {
+      swipeThreshold = width * swipeThreshold!;
     }
 
     // Set the starting animation as End
-    _currentAnimationOrigin = _AnimationOrigin.End;
+    if (!uniDirectional) _currentAnimationOrigin = _AnimationOrigin.End;
     // Then indicate the threshold is reached so we can play to the end
     // of the animation (Playing the close animation)
     _thresholdReached = true;
@@ -102,7 +105,7 @@ class SwipeAdvanceController extends FlareControls {
                       .Beginning || // If we're coming from the beginning we want to play the open animation
               _closeAnimation == null)) {
         // If we have no closeAnimation defined we want to always play the open animation
-        _openAnimation.apply(_animationTimeToApply, artboard, 1.0);
+        _openAnimation!.apply(_animationTimeToApply, artboard, 1.0);
         _previousTimeToApply = _animationTimeToApply;
       } else if ((_previousTimeToApply !=
               _closeAnimationTimeToApply) && // Always has to be true. We don't do uneccessary updates
@@ -110,7 +113,7 @@ class SwipeAdvanceController extends FlareControls {
               _closeAnimation != null)) {
         // print(
         //     'PLAY CLOSEANIMATION: _closeAnimationTimeToApply: $_closeAnimationTimeToApply, closeAnimationPosition: $_closeAnimationPosition');
-        _closeAnimation.apply(_closeAnimationTimeToApply, artboard, 1.0);
+        _closeAnimation!.apply(_closeAnimationTimeToApply, artboard, 1.0);
         _previousTimeToApply = _closeAnimationTimeToApply;
       }
     }
@@ -138,7 +141,7 @@ class SwipeAdvanceController extends FlareControls {
         touchPosition.dx < width &&
         touchPosition.dy > 0;
 
-    if (completeOnThresholdReached && _thresholdReached) {
+    if (completeOnThresholdReached! && _thresholdReached) {
       interactionEnded();
       return;
     }
@@ -156,7 +159,7 @@ class SwipeAdvanceController extends FlareControls {
     if (!_interacting) {
       if (_thresholdReached) {
         _updateClosingAnimation(elapsed);
-      } else if (!animationAtEnd && reverseOnRelease) {
+      } else if (!animationAtEnd && reverseOnRelease!) {
         _reverseCloseAnimation(elapsed);
       }
     }
@@ -167,7 +170,7 @@ class SwipeAdvanceController extends FlareControls {
       if (_thresholdReached) {
         // If we've released the drag and has reached the threshold
         _updateAnimationForNoCloseAnimationSupplied(elapsed);
-      } else if (!animationAtEnd && reverseOnRelease) {
+      } else if (!animationAtEnd && reverseOnRelease!) {
         _reverseOpenAnimation(elapsed);
       }
     }
@@ -178,7 +181,7 @@ class SwipeAdvanceController extends FlareControls {
     // If the animation has not ended and we haven't reached the threshold yet
     var reverseAnimation =
         _currentAnimationOrigin == _AnimationOrigin.Beginning;
-    var reverseValue = (elapsed * _speed) % _openAnimation.duration;
+    var reverseValue = (elapsed * _speed) % _openAnimation!.duration;
     if (reverseAnimation && _openAnimationPosition > 0) {
       _openAnimationPosition -= reverseValue;
     } else if (!reverseAnimation && _openAnimationPosition < 1) {
@@ -223,9 +226,9 @@ class SwipeAdvanceController extends FlareControls {
         _currentAnimationOrigin == _AnimationOrigin.Beginning;
     if (comingFromBeginning && _openAnimationPosition < 1) {
       // advance until we get to the end of the animation
-      _openAnimationPosition += (elapsed * _speed) % _openAnimation.duration;
+      _openAnimationPosition += (elapsed * _speed) % _openAnimation!.duration;
     } else if (!comingFromBeginning && _openAnimationPosition > 0) {
-      _openAnimationPosition -= (elapsed * _speed) % _openAnimation.duration;
+      _openAnimationPosition -= (elapsed * _speed) % _openAnimation!.duration;
     } else {
       // When we get to the end of the animation we want to indicate that and set some values.
       // Here we prapare for the swipe back
@@ -236,6 +239,7 @@ class SwipeAdvanceController extends FlareControls {
           _currentAnimationOrigin = _AnimationOrigin.End;
           // We also want to set the delta interaction equal to the pagewidth
           _deltaXSinceInteraction = _playCloseAnimation ? 0 : width;
+          callback?.call("active");
         } else {
           // If we're coming from the end, We want to indicate that we are now at the beginning of the animation.
           _currentAnimationOrigin = _AnimationOrigin.Beginning;
@@ -256,7 +260,7 @@ class SwipeAdvanceController extends FlareControls {
   void _updateClosingAnimation(double elapsed) {
     if (_closeAnimationPosition < 1) {
       // advance until we get to the end of the animation
-      _closeAnimationPosition += (elapsed * _speed) % _closeAnimation.duration;
+      _closeAnimationPosition += (elapsed * _speed) % _closeAnimation!.duration;
     } else {
       // When we get to the end of the animation we want to indicate that and set some values.
       // Here we prapare for the swipe back
@@ -265,6 +269,7 @@ class SwipeAdvanceController extends FlareControls {
 
         animationAtEnd = true;
         _thresholdReached = false;
+        callback?.call("inactive");
         // print(
         //     'CLOSING Animation@end FORWARD: _currentAnimationOrigin: $_currentAnimationOrigin, _deltaXSinceInteraction: $_deltaXSinceInteraction');
       }
@@ -284,7 +289,7 @@ class SwipeAdvanceController extends FlareControls {
   void _reverseCloseAnimation(double elapsed) {
     // If the animation has not ended and we haven't reached the threshold yet
     // print('_reverseCloseAnimation');
-    var reverseValue = (elapsed * _speed) % _closeAnimation.duration;
+    var reverseValue = (elapsed * _speed) % _closeAnimation!.duration;
     if (_closeAnimationPosition > 0) {
       _closeAnimationPosition -= reverseValue;
     } else {
@@ -312,7 +317,7 @@ class SwipeAdvanceController extends FlareControls {
     }
 
     if (swipeThreshold != null) {
-      _thresholdReached = _deltaXSinceInteraction > swipeThreshold;
+      _thresholdReached = _deltaXSinceInteraction > swipeThreshold!;
     }
 
     if (_direction == ActorAdvancingDirection.RightToLeft) {
@@ -343,9 +348,9 @@ class SwipeAdvanceController extends FlareControls {
 
     if (swipeThreshold != null) {
       if (_currentAnimationOrigin == _AnimationOrigin.Beginning) {
-        _thresholdReached = _deltaXSinceInteraction > swipeThreshold;
+        _thresholdReached = _deltaXSinceInteraction > swipeThreshold!;
       } else {
-        _thresholdReached = _deltaXSinceInteraction < swipeThreshold;
+        _thresholdReached = _deltaXSinceInteraction < swipeThreshold!;
       }
     }
 

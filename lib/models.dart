@@ -9,21 +9,21 @@ class ActiveArea {
 
   /// The name of the animation to play when a user taps on this
   /// area.
-  String animationName;
+  String? animationName;
 
   /// A list of the animations to cycle through when a user taps this area.
   /// It cycles through from 0 to the end of the list. One animation per tap
   /// This cannot be used together with animation name.
-  List<String> animationsToCycle;
+  List<String>? animationsToCycle;
 
   /// This callback will be fired when the animation area is interacted with
-  Function onAreaTapped;
+  Function? onAreaTapped;
 
   /// A list of values for the active area to guard against coming from certain animations.
-  List<String> guardComingFrom;
+  List<String>? guardComingFrom;
 
   /// Draws debug data over the animation to indicate the active area
-  bool debugArea;
+  bool? debugArea;
 
   /// ()A list of values for the active area to guard against, going to certain animations.
   // final List<String> guardGoingTo;
@@ -31,7 +31,7 @@ class ActiveArea {
   int _nextAnimationIndex = 0;
 
   ActiveArea(
-      {@required this.area,
+      {required this.area,
       this.animationsToCycle,
       this.animationName,
       this.onAreaTapped,
@@ -55,16 +55,16 @@ class ActiveArea {
   bool get hasRequiredAnimation => guardComingFrom != null;
   bool get hasAnimationGuard => guardComingFrom != null;
 
-  bool get hasCycleAnimations => animationsToCycle != null && animationsToCycle.length > 1;
+  bool get hasCycleAnimations => animationsToCycle != null && animationsToCycle!.length > 1;
 
   String getNextAnimation() {
     _nextAnimationIndex++;
 
-    if (_nextAnimationIndex == animationsToCycle.length) {
+    if (_nextAnimationIndex == animationsToCycle!.length) {
       _nextAnimationIndex = 0;
     }
 
-    var nextAnimation = animationsToCycle[_nextAnimationIndex];
+    var nextAnimation = animationsToCycle![_nextAnimationIndex];
 
     return nextAnimation;
   }
@@ -77,7 +77,7 @@ class ActiveArea {
 
 class RelativeActiveArea extends ActiveArea {
   RelativeActiveArea(
-      {debugArea, area, guardComingFrom, animationName, onAreaTapped})
+      {debugArea, required area, guardComingFrom, animationName, onAreaTapped})
       : super(
             debugArea: debugArea,
             area: area,
@@ -88,7 +88,7 @@ class RelativeActiveArea extends ActiveArea {
 
 class RelativePanArea extends RelativeActiveArea {
   RelativePanArea(
-      {debugArea, area, guardComingFrom, animationName, onAreaTapped})
+      {debugArea, required area, guardComingFrom, animationName, onAreaTapped})
       : super(
             debugArea: debugArea,
             area: area,

@@ -1,7 +1,7 @@
 import 'models.dart';
 
-String getAnimationToPlay(ActiveArea activeArea) {
-  String animationToPlay;
+String? getAnimationToPlay(ActiveArea activeArea) {
+  String? animationToPlay;
 
   if (activeArea.animationName != null) {
     animationToPlay = activeArea.animationName;

@@ -4,8 +4,8 @@ import 'package:smart_flare/reducers.dart';
 import '../models.dart';
 
 class TapController extends FlareControls {
-  String lastPlayedAnimation;
-  String lastPlayedCycleAnimation;
+  String? lastPlayedAnimation;
+  String? lastPlayedCycleAnimation;
 
   void playAnimation(ActiveArea activeArea) {
     var animationName = getAnimationToPlay(activeArea);
@@ -21,12 +21,12 @@ class TapController extends FlareControls {
     }
 
     if (activeArea.hasAnimationGuard &&
-        activeArea.guardComingFrom.contains(lastPlayedAnimation)) {
+        activeArea.guardComingFrom!.contains(lastPlayedAnimation)) {
       // print('SmartFlare:Info - Last played animation is $_lastPlayedAnimation and $animationName has a guard against it');
       return;
     }
 
-    play(animationName);
+    play(animationName!);
 
     lastPlayedAnimation = animationName;
 
